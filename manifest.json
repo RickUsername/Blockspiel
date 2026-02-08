@@ -1,0 +1,22 @@
+{
+    "name": "Blockspiel",
+    "short_name": "Blockspiel",
+    "description": "Werbefreies Block-Puzzle im Holzdesign",
+    "start_url": ".",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#5C3A1E",
+    "theme_color": "#5C3A1E",
+    "icons": [
+        {
+            "src": "assets/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "assets/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
