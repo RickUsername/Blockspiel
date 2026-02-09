@@ -1,10 +1,12 @@
-const CACHE_NAME = 'blockspiel-v1';
+const CACHE_NAME = 'blockspiel-v4';
 const ASSETS = [
     './',
     './index.html',
     './css/style.css',
     './js/game.js',
-    './manifest.json'
+    './manifest.json',
+    './assets/icons/icon-192.svg',
+    './assets/icons/icon-512.svg'
 ];
 
 self.addEventListener('install', event => {
