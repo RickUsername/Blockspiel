@@ -1,0 +1,360 @@
+/* Blockspiel — Holzdesign für Senioren */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #5C3A1E;
+  color: #F5E6D0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Holzmaserung Hintergrund */
+body {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0) 4px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0.02) 1px,
+      rgba(0,0,0,0) 3px
+    ),
+    linear-gradient(180deg, #6B4226 0%, #5C3A1E 40%, #4A2E16 100%);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 0.5rem;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   Header / Score
+   ============================================ */
+#header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem;
+  flex-shrink: 0;
+}
+
+#header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #F5E6D0;
+  text-shadow: 1px 2px 3px rgba(0,0,0,0.4);
+  letter-spacing: 0.5px;
+}
+
+#score-area {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  min-width: 60px;
+  border: 1px solid rgba(245,230,208,0.15);
+}
+
+.score-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+
+.score-box span:last-child {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #FFD700;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Timer-Box */
+.timer-box span:last-child {
+  color: #FF6B6B;
+}
+
+.timer-box.hidden {
+  display: none;
+}
+
+/* ============================================
+   Spielfeld
+   ============================================ */
+#board-wrap {
+  flex-shrink: 0;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  padding: 4px;
+  background: rgba(0,0,0,0.3);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.4),
+    0 2px 8px rgba(0,0,0,0.3);
+  border: 2px solid rgba(245,230,208,0.1);
+}
+
+#board {
+  display: block;
+  border-radius: 4px;
+}
+
+/* ============================================
+   Vorschau-Bereich + Trash
+   ============================================ */
+#preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.preview-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  border: 2px solid rgba(245,230,208,0.1);
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.preview-slot:active {
+  cursor: grabbing;
+}
+
+.preview-slot:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  border-color: rgba(245,230,208,0.25);
+}
+
+.preview-slot.dragging {
+  opacity: 0.3;
+  transform: scale(0.9);
+}
+
+.preview-slot.empty {
+  opacity: 0.15;
+  border-style: dashed;
+  cursor: default;
+}
+
+.preview-canvas {
+  display: block;
+  pointer-events: none;
+}
+
+/* ============================================
+   Hilfekasten (Trash)
+   ============================================ */
+#trash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  border: 2px dashed rgba(245,230,208,0.3);
+  cursor: default;
+  transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+  flex-shrink: 0;
+}
+
+#trash:hover {
+  border-color: rgba(255,107,107,0.6);
+  background: rgba(255,107,107,0.1);
+  transform: scale(1.05);
+}
+
+#trash.hidden {
+  display: none;
+}
+
+#trash.used {
+  opacity: 0.3;
+  border-style: dotted;
+  pointer-events: none;
+}
+
+#trash-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+#trash-count {
+  font-size: 0.65rem;
+  color: #FF6B6B;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ============================================
+   Block-Zähler
+   ============================================ */
+#block-counter {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  padding: 0.25rem 0;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   Game Over Overlay
+   ============================================ */
+#game-over {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
+#game-over.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+#game-over-box {
+  background: linear-gradient(135deg, #6B4226, #5C3A1E);
+  border: 2px solid rgba(245,230,208,0.3);
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+#game-over-box h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: #F5E6D0;
+  text-shadow: 1px 2px 3px rgba(0,0,0,0.4);
+}
+
+#game-over-box p {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+  color: #FFD700;
+}
+
+#final-time-row {
+  font-size: 1rem;
+  color: #FF6B6B;
+}
+
+#final-time-row.hidden {
+  display: none;
+}
+
+#restart-btn {
+  background: linear-gradient(135deg, #27AE60, #1E8449);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 2rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  letter-spacing: 0.5px;
+  margin-top: 0.75rem;
+}
+
+#restart-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 16px rgba(0,0,0,0.4);
+}
+
+#restart-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 400px) {
+  #header h1 {
+    font-size: 1.2rem;
+  }
+  .score-box {
+    min-width: 50px;
+    padding: 0.2rem 0.4rem;
+  }
+  .score-box span:last-child {
+    font-size: 1rem;
+  }
+  .preview-slot {
+    width: 75px;
+    height: 75px;
+  }
+  #preview {
+    gap: 0.4rem;
+  }
+  #trash {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (min-height: 800px) {
+  #app {
+    padding-top: 1rem;
+  }
+  #board-wrap {
+    margin: 1rem 0;
+  }
+}
