@@ -1,6 +1,6 @@
-/* Blockspiel — Premium-Holzdesign */
+/* Blockspiel — Premium Holzpuzzle auf dem Spieltisch */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -11,78 +11,79 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #3E2215;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
   color: #F5E6D0;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* Edles Nussbaum-Holz Hintergrund — mehrlagige Maserung */
+/* ============================================
+   Spieltisch-Hintergrund: dunkles Leder/Filz
+   ============================================ */
 body {
   background:
-    /* feine vertikale Poren */
+    /* Leder-Narbenstruktur */
     repeating-linear-gradient(
-      92deg,
-      rgba(0,0,0,0) 0px,
-      rgba(0,0,0,0.04) 1px,
-      rgba(0,0,0,0) 2px,
-      rgba(0,0,0,0.02) 4px,
+      105deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0.02) 1px,
+      rgba(0,0,0,0) 2px, rgba(0,0,0,0.01) 4px,
       rgba(0,0,0,0) 5px
     ),
-    /* breite Maserungsbänder */
     repeating-linear-gradient(
-      88deg,
-      rgba(80,45,20,0) 0px,
-      rgba(80,45,20,0.08) 12px,
-      rgba(80,45,20,0) 24px
+      15deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0.015) 1px,
+      rgba(0,0,0,0) 3px
     ),
-    /* horizontale Fasern */
+    /* Filz-Mikrotextur */
     repeating-linear-gradient(
-      0deg,
-      rgba(0,0,0,0) 0px,
-      rgba(0,0,0,0.015) 1px,
+      45deg,
+      rgba(255,255,255,0) 0px, rgba(255,255,255,0.008) 1px,
+      rgba(255,255,255,0) 2px
+    ),
+    /* Zweite Filz-Schicht für Stoffoptik */
+    repeating-linear-gradient(
+      135deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0.008) 1px,
       rgba(0,0,0,0) 2px
     ),
-    /* Tiefenverlauf — dunkles Nussbaumholz */
-    linear-gradient(
-      175deg,
-      #5A3A22 0%,
-      #4A2E18 25%,
-      #3E2215 50%,
-      #2F1A0E 80%,
-      #261408 100%
+    /* Warmes Waldgrün mit natürlicher Vignette */
+    radial-gradient(
+      ellipse at 50% 40%,
+      #3A5228 0%,
+      #2E4620 35%,
+      #243A18 60%,
+      #1A2E10 85%,
+      #12200A 100%
     );
 }
 
-/* Vignette + Goldrand-Deko über den ganzen Bildschirm */
+/* Vignette — wie Tischlampe von oben */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  /* Vignette — dunkle Ecken für Tiefe */
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0,0,0,0) 40%,
-    rgba(0,0,0,0.35) 100%
-  );
+  background:
+    radial-gradient(
+      ellipse 65% 55% at 50% 35%,
+      rgba(255,240,200,0.06) 0%,
+      rgba(0,0,0,0) 45%,
+      rgba(0,0,0,0.5) 100%
+    );
 }
 
-/* Dekorativer goldener Zierrahmen */
+/* Dezenter Tischrand */
 body::after {
   content: '';
   position: fixed;
-  inset: 6px;
+  inset: 5px;
   pointer-events: none;
   z-index: 1;
-  border: 1px solid rgba(200,160,80,0.12);
-  border-radius: 16px;
-  box-shadow:
-    inset 0 0 30px rgba(0,0,0,0.15),
-    inset 0 0 1px rgba(200,160,80,0.15);
+  border: 1px solid rgba(120,100,60,0.08);
+  border-radius: 18px;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.2);
 }
 
 #app {
@@ -91,100 +92,96 @@ body::after {
   align-items: center;
   height: 100%;
   padding: 0.5rem;
-  max-width: 540px;
+  max-width: 580px;
   margin: 0 auto;
   position: relative;
   z-index: 2;
 }
 
 /* ============================================
-   Header / Score
+   Header — eingebrannte Schrift auf Holzleiste
    ============================================ */
 #header {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.25rem;
+  padding: 0.3rem 0.5rem;
   flex-shrink: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(80,55,30,0.6) 0%,
+      rgba(60,38,18,0.7) 100%
+    );
+  border-radius: 10px;
+  border: 1px solid rgba(120,85,45,0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,160,0.08),
+    inset 0 -1px 2px rgba(0,0,0,0.3),
+    0 3px 10px rgba(0,0,0,0.4);
 }
 
 #header h1 {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-size: 1.7rem;
-  font-weight: 700;
-  color: #FAEBD7;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #E8D4B0;
   text-shadow:
-    0 1px 0 rgba(255,220,160,0.3),
-    0 2px 4px rgba(0,0,0,0.6);
-  letter-spacing: 1px;
-  position: relative;
-  padding-bottom: 4px;
-}
-
-/* Goldene Zierlinie unter dem Titel */
-#header h1::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 10%;
-  width: 80%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(200,160,80,0) 0%,
-    rgba(200,160,80,0.5) 30%,
-    rgba(240,200,100,0.7) 50%,
-    rgba(200,160,80,0.5) 70%,
-    rgba(200,160,80,0) 100%
-  );
+    0 1px 2px rgba(0,0,0,0.6),
+    0 0 8px rgba(212,160,64,0.15);
+  letter-spacing: 1.5px;
 }
 
 #score-area {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
+/* Score-Boxen — eingefräste Holztafeln */
 .score-box {
   display: flex;
   flex-direction: column;
   align-items: center;
   background:
     linear-gradient(
-      145deg,
-      rgba(90,58,34,0.9) 0%,
-      rgba(62,34,21,0.95) 100%
+      180deg,
+      rgba(40,25,12,0.5) 0%,
+      rgba(30,18,8,0.6) 100%
     );
-  border-radius: 10px;
-  padding: 0.35rem 0.65rem;
-  min-width: 62px;
-  border: 1px solid rgba(180,140,90,0.25);
+  border-radius: 8px;
+  padding: 0.25rem 0.55rem;
+  min-width: 58px;
+  border: 1px solid rgba(120,85,45,0.2);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    inset 0 -1px 2px rgba(0,0,0,0.3),
-    0 2px 6px rgba(0,0,0,0.4);
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    inset 0 -1px 0 rgba(255,220,160,0.05);
 }
 
+/* Labels — feine Gravur */
 .score-label {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: rgba(250,235,215,0.55);
-  font-weight: 600;
-}
-
-.score-box span:last-child {
-  font-size: 1.25rem;
+  letter-spacing: 1.5px;
+  /* Gravur-Effekt */
+  color: rgba(180,150,100,0.5);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
   font-weight: 700;
-  color: #F0C040;
-  text-shadow:
-    0 0 8px rgba(240,192,64,0.3),
-    0 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Tempo-Box (Multiplikator-Anzeige) */
+/* Zahlen — eingebrannt mit warmem Glühen */
+.score-box span:last-child {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #D4A040;
+  text-shadow:
+    0 0 6px rgba(212,160,64,0.2),
+    0 -1px 0 rgba(0,0,0,0.4),
+    0 1px 0 rgba(255,220,160,0.1);
+}
+
 .tempo-box span:last-child {
-  color: #2ECC71;
+  color: #5DAA5D;
   transition: color 0.3s ease;
 }
 
@@ -193,158 +190,145 @@ body::after {
 }
 
 /* ============================================
-   Spielfeld — geschnitzter Holzrahmen mit
-   Gold-Intarsie
+   Spielfeld — Massivholz-Brett auf dem Tisch
    ============================================ */
 #board-wrap {
   flex-shrink: 0;
-  margin: 0.5rem 0;
-  border-radius: 14px;
-  padding: 7px;
+  margin: 0.4rem 0;
+  border-radius: 10px;
+  padding: 6px;
+  /* Dicker Holzrahmen */
   background:
     linear-gradient(
-      145deg,
-      #6B4428 0%,
-      #5A3820 30%,
-      #4A2E18 60%,
-      #3A2010 100%
+      160deg,
+      #7A5A38 0%,
+      #6B4A2C 20%,
+      #5A3C20 50%,
+      #4A3018 80%,
+      #3E2812 100%
     );
   box-shadow:
-    /* äußerer Schlagschatten */
-    0 6px 24px rgba(0,0,0,0.55),
-    0 2px 6px rgba(0,0,0,0.3),
-    /* innere Kante oben — Licht */
-    inset 0 1px 0 rgba(255,220,160,0.18),
-    /* innere Kante unten — Schatten */
-    inset 0 -2px 6px rgba(0,0,0,0.45),
-    /* tiefe Innenfuge */
-    inset 0 0 10px rgba(0,0,0,0.2);
-  border: 1.5px solid rgba(200,160,80,0.18);
+    /* Tiefer Schlagschatten auf dem Tisch */
+    0 8px 30px rgba(0,0,0,0.6),
+    0 3px 8px rgba(0,0,0,0.4),
+    /* Rahmen-Kanten */
+    inset 0 1px 0 rgba(255,220,160,0.15),
+    inset 0 -2px 0 rgba(0,0,0,0.3),
+    inset 1px 0 0 rgba(255,220,160,0.06),
+    inset -1px 0 0 rgba(0,0,0,0.15),
+    /* Innere Tiefe */
+    inset 0 0 12px rgba(0,0,0,0.2);
+  border: 1px solid rgba(120,85,45,0.3);
   position: relative;
 }
 
-/* Innere Gold-Intarsie-Linie */
+/* Innere Rille im Rahmen */
 #board-wrap::before {
   content: '';
   position: absolute;
-  inset: 3px;
-  border-radius: 11px;
-  border: 1px solid rgba(200,160,80,0.12);
+  inset: 4px;
+  border-radius: 7px;
+  border: 1px solid rgba(0,0,0,0.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,160,0.05),
+    0 1px 0 rgba(255,220,160,0.04);
   pointer-events: none;
-  box-shadow: inset 0 0 3px rgba(0,0,0,0.15);
 }
 
 #board {
   display: block;
-  border-radius: 6px;
-  box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+  border-radius: 4px;
+  /* Sicherstellen, dass Canvas nie verzerrt wird */
+  flex-shrink: 0;
 }
 
 /* ============================================
-   Vorschau-Bereich + Reserve
+   Vorschau — Holzablage für Spielsteine
    ============================================ */
-/* Goldene Trennlinie über dem Vorschau-Bereich */
 #preview-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
   width: 100%;
   flex-shrink: 0;
-  position: relative;
-  padding-top: 0.6rem;
-}
-
-#preview-row::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 10%;
-  width: 80%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(200,160,80,0) 0%,
-    rgba(200,160,80,0.3) 20%,
-    rgba(240,200,100,0.5) 50%,
-    rgba(200,160,80,0.3) 80%,
-    rgba(200,160,80,0) 100%
-  );
+  padding: 0.35rem 0.5rem;
+  margin-top: 0.2rem;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(70,48,25,0.5) 0%,
+      rgba(50,32,15,0.6) 100%
+    );
+  border-radius: 10px;
+  border: 1px solid rgba(120,85,45,0.2);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.25),
+    inset 0 -1px 0 rgba(255,220,160,0.06),
+    0 2px 8px rgba(0,0,0,0.3);
 }
 
 #preview {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
+  gap: 0.6rem;
 }
 
+/* Einzelne Stellflächen — eingefräste Mulden */
 .preview-slot {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   background:
-    linear-gradient(
-      145deg,
-      rgba(70,42,22,0.8) 0%,
-      rgba(50,28,14,0.9) 100%
+    radial-gradient(
+      ellipse at 50% 45%,
+      rgba(0,0,0,0.15) 0%,
+      rgba(0,0,0,0.25) 100%
     );
-  border-radius: 12px;
-  border: 2px solid rgba(180,140,90,0.15);
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.2);
   cursor: default;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, border-color 0.2s ease;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    inset 0 -1px 3px rgba(0,0,0,0.3),
-    0 2px 6px rgba(0,0,0,0.3);
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    inset 0 -1px 0 rgba(255,220,160,0.04);
 }
 
-/* Pflicht-Block (Index 0): goldene Intarsie */
-.preview-slot.mandatory {
-  border: 2px solid rgba(240,192,64,0.7);
+/* Alle Formen sind ziehbar */
+.preview-slot:not(.empty-slot) {
+  border: 1.5px solid rgba(212,160,64,0.35);
   cursor: grab;
   box-shadow:
-    0 0 12px rgba(240,192,64,0.15),
-    0 0 4px rgba(240,192,64,0.1),
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    inset 0 -1px 3px rgba(0,0,0,0.3),
-    0 2px 8px rgba(0,0,0,0.3);
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 0 6px rgba(212,160,64,0.08);
 }
 
-.preview-slot.mandatory:active {
+.preview-slot:not(.empty-slot):active {
   cursor: grabbing;
 }
 
-.preview-slot.mandatory:hover {
-  transform: scale(1.05);
-  border-color: #F0C040;
+.preview-slot:not(.empty-slot):hover {
+  transform: scale(1.04);
+  border-color: rgba(212,160,64,0.6);
   box-shadow:
-    0 0 20px rgba(240,192,64,0.25),
-    0 0 6px rgba(240,192,64,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.1),
-    0 4px 12px rgba(0,0,0,0.35);
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 0 14px rgba(212,160,64,0.15),
+    0 4px 10px rgba(0,0,0,0.3);
 }
 
-/* Vorschau-Blöcke (Index 1+2): gedimmt */
-.preview-slot.preview-only {
-  opacity: 0.35;
+.preview-slot.empty-slot {
+  opacity: 0.15;
   pointer-events: none;
   border-style: dashed;
-  border-color: rgba(180,140,90,0.12);
+  border-color: rgba(180,150,100,0.2);
 }
 
 .preview-slot.dragging {
-  opacity: 0.3;
-  transform: scale(0.9);
-}
-
-.preview-slot.empty {
-  opacity: 0.15;
-  border-style: dashed;
-  cursor: default;
+  opacity: 0.25;
+  transform: scale(0.92);
 }
 
 .preview-canvas {
@@ -353,63 +337,57 @@ body::after {
 }
 
 /* ============================================
-   Reserve-Box — eingelegte Holzkassette
+   Reserve-Box
    ============================================ */
 #reserve {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
   background:
-    linear-gradient(
-      145deg,
-      rgba(70,42,22,0.8) 0%,
-      rgba(50,28,14,0.9) 100%
+    radial-gradient(
+      ellipse at 50% 45%,
+      rgba(0,0,0,0.15) 0%,
+      rgba(0,0,0,0.25) 100%
     );
-  border-radius: 12px;
-  border: 2px solid rgba(180,140,90,0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(120,85,45,0.2);
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
   gap: 3px;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    inset 0 -1px 3px rgba(0,0,0,0.3),
-    0 2px 6px rgba(0,0,0,0.3);
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    inset 0 -1px 0 rgba(255,220,160,0.04);
 }
 
 #reserve:hover:not(.locked) {
-  border-color: rgba(46,204,113,0.6);
+  border-color: rgba(93,170,93,0.5);
   box-shadow:
-    0 0 12px rgba(46,204,113,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 3px 8px rgba(0,0,0,0.35);
-  transform: scale(1.05);
+    inset 0 2px 4px rgba(0,0,0,0.3),
+    0 0 10px rgba(93,170,93,0.1);
+  transform: scale(1.04);
 }
 
-/* Reserve gesperrt */
 #reserve.locked {
-  opacity: 0.2;
-  border-style: dotted;
-  border-color: rgba(180,140,90,0.1);
+  opacity: 0.15;
   pointer-events: none;
-  box-shadow: none;
 }
 
-/* Reserve entsperrt aber leer */
 #reserve.empty {
   border-style: dashed;
-  border-color: rgba(250,235,215,0.3);
+  border-color: rgba(180,150,100,0.25);
 }
 
 .reserve-label {
-  font-size: 0.5rem;
+  font-size: 0.45rem;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: rgba(250,235,215,0.5);
-  font-weight: 600;
+  color: rgba(180,150,100,0.45);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -418,51 +396,32 @@ body::after {
 }
 
 /* ============================================
-   Block-Zähler
+   Block-Zähler — eingraviert
    ============================================ */
 #block-counter {
-  font-size: 0.65rem;
-  color: rgba(250,235,215,0.4);
-  padding: 0.4rem 0 0.25rem;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  position: relative;
-  width: 60%;
+  font-size: 0.6rem;
+  color: rgba(180,150,100,0.35);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+  padding: 0.35rem 0;
+  letter-spacing: 0.8px;
+  font-weight: 700;
   text-align: center;
 }
 
-/* Ornament unter dem Zähler */
-#block-counter::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 15%;
-  width: 70%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(200,160,80,0) 0%,
-    rgba(200,160,80,0.2) 30%,
-    rgba(200,160,80,0.35) 50%,
-    rgba(200,160,80,0.2) 70%,
-    rgba(200,160,80,0) 100%
-  );
-}
-
 /* ============================================
-   Game Over Overlay
+   Game Over
    ============================================ */
 #game-over {
   position: fixed;
   inset: 0;
-  background: rgba(15,8,3,0.8);
+  background: rgba(5,8,5,0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   animation: fadeIn 0.3s ease;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 #game-over.hidden {
@@ -475,81 +434,91 @@ body::after {
 }
 
 #game-over-box {
+  position: relative;
+  z-index: 2;
   background:
     linear-gradient(
-      145deg,
-      #6B4428 0%,
-      #5A3A22 30%,
-      #4A2E18 70%,
-      #3A2010 100%
+      160deg,
+      #6B4A2C 0%,
+      #5A3C20 40%,
+      #4A3018 100%
     );
-  border: 2px solid rgba(180,140,90,0.3);
-  border-radius: 18px;
+  border: 1px solid rgba(120,85,45,0.35);
+  border-radius: 14px;
   padding: 2.5rem 3rem;
   text-align: center;
   box-shadow:
-    0 12px 48px rgba(0,0,0,0.6),
+    0 16px 60px rgba(0,0,0,0.7),
     0 4px 16px rgba(0,0,0,0.4),
-    inset 0 1px 0 rgba(255,220,160,0.12),
+    inset 0 1px 0 rgba(255,220,160,0.1),
     inset 0 -2px 4px rgba(0,0,0,0.3);
   animation: popIn 0.3s ease;
 }
 
 @keyframes popIn {
-  from { transform: scale(0.8); opacity: 0; }
+  from { transform: scale(0.85); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
 #game-over-box h2 {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.9rem;
+  font-size: 1.8rem;
+  font-weight: 900;
   margin-bottom: 0.75rem;
-  color: #FAEBD7;
+  color: rgba(40,25,10,0.85);
   text-shadow:
-    0 1px 0 rgba(255,220,160,0.2),
-    0 2px 4px rgba(0,0,0,0.5);
+    0 1px 0 rgba(255,220,160,0.25),
+    0 -1px 0 rgba(0,0,0,0.2);
 }
 
 #game-over-box p {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   margin-bottom: 0.75rem;
-  color: #F0C040;
-  font-weight: 600;
+  color: #D4A040;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(212,160,64,0.15);
 }
 
+/* Button — polierter Holzknopf */
 #restart-btn {
   background:
     linear-gradient(
-      145deg,
-      #2ECC71 0%,
-      #27AE60 40%,
-      #1E8449 100%
+      180deg,
+      #8B6B40 0%,
+      #7A5A30 40%,
+      #654A25 100%
     );
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 0.8rem 2.2rem;
-  font-size: 1.15rem;
+  color: rgba(30,18,8,0.9);
+  text-shadow: 0 1px 0 rgba(255,220,160,0.2);
+  border: 1px solid rgba(120,85,45,0.4);
+  border-radius: 10px;
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
   font-weight: 700;
+  font-family: 'Playfair Display', Georgia, serif;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow:
-    0 4px 14px rgba(0,0,0,0.4),
-    inset 0 1px 0 rgba(255,255,255,0.2);
-  letter-spacing: 0.5px;
+    0 4px 14px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,220,160,0.2),
+    inset 0 -2px 0 rgba(0,0,0,0.2);
+  letter-spacing: 1px;
   margin-top: 1rem;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 #restart-btn:hover {
-  transform: scale(1.05);
+  transform: scale(1.04);
   box-shadow:
-    0 6px 20px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(255,255,255,0.25);
+    0 6px 20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,220,160,0.25),
+    inset 0 -2px 0 rgba(0,0,0,0.2);
 }
 
 #restart-btn:active {
   transform: scale(0.97);
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.4),
+    inset 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* ============================================
@@ -557,25 +526,25 @@ body::after {
    ============================================ */
 @media (max-width: 400px) {
   #header h1 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
   }
   .score-box {
-    min-width: 50px;
+    min-width: 48px;
     padding: 0.2rem 0.4rem;
   }
   .score-box span:last-child {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
   .preview-slot {
-    width: 75px;
-    height: 75px;
+    width: 72px;
+    height: 72px;
   }
   #preview {
-    gap: 0.4rem;
+    gap: 0.35rem;
   }
   #reserve {
-    width: 58px;
-    height: 58px;
+    width: 56px;
+    height: 56px;
   }
 }
 
@@ -586,4 +555,227 @@ body::after {
   #board-wrap {
     margin: 1rem 0;
   }
+}
+
+/* ============================================
+   Mute-Button
+   ============================================ */
+#mute-btn {
+  background: none;
+  border: 1px solid rgba(120,85,45,0.2);
+  border-radius: 8px;
+  padding: 0.2rem 0.45rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #D4A040;
+  transition: transform 0.15s ease, background 0.15s ease;
+  line-height: 1;
+}
+
+#mute-btn:hover {
+  transform: scale(1.1);
+  background: rgba(40,25,12,0.4);
+}
+
+#mute-btn:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   Natur-Dekorationen
+   ============================================ */
+#nature-decor {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.deco {
+  position: absolute;
+}
+
+/* --- 4 Ecken: üppige Kompositionen --- */
+.deco-corner-tl {
+  top: -8px;
+  left: -8px;
+  width: 145px;
+  animation: swayTL 7s ease-in-out infinite;
+  transform-origin: top left;
+}
+
+.deco-corner-tr {
+  top: -8px;
+  right: -8px;
+  width: 135px;
+  animation: swayTR 8s ease-in-out infinite;
+  transform-origin: top right;
+}
+
+.deco-corner-bl {
+  bottom: -5px;
+  left: -5px;
+  width: 165px;
+  animation: bloomPulse 6s ease-in-out infinite;
+}
+
+.deco-corner-br {
+  bottom: -5px;
+  right: -5px;
+  width: 150px;
+  animation: bloomPulse 7s ease-in-out infinite;
+  animation-delay: -2.5s;
+}
+
+/* --- Ränder: Farn, Efeu, Moos --- */
+.deco-edge-lm {
+  top: 25%;
+  left: -5px;
+  width: 65px;
+  animation: swayTL 5.5s ease-in-out infinite;
+  transform-origin: left center;
+  animation-delay: -1s;
+}
+
+.deco-edge-rm {
+  top: 28%;
+  right: -5px;
+  width: 60px;
+  animation: swayTR 6s ease-in-out infinite;
+  transform-origin: right center;
+  animation-delay: -2s;
+}
+
+.deco-edge-ll {
+  top: 58%;
+  left: -3px;
+  width: 58px;
+  animation: swayTL 6.5s ease-in-out infinite;
+  transform-origin: bottom left;
+  animation-delay: -3s;
+}
+
+.deco-edge-rl {
+  top: 55%;
+  right: -3px;
+  width: 65px;
+  animation: bloomPulse 5.5s ease-in-out infinite;
+  animation-delay: -1.5s;
+}
+
+.deco-edge-tc {
+  top: 0;
+  left: 28%;
+  width: 100px;
+  animation: swayTL 9s ease-in-out infinite;
+  transform-origin: top center;
+  animation-delay: -4s;
+}
+
+.deco-edge-bc {
+  bottom: 0;
+  left: calc(50% - 68px);
+  width: 136px;
+  animation: bloomPulse 8s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+/* --- Einzelne schwebende Blätter --- */
+.deco-scatter-1 {
+  top: 14%;
+  right: 12%;
+  width: 32px;
+  opacity: .65;
+  animation: leafFloat 8s ease-in-out infinite;
+}
+
+.deco-scatter-2 {
+  top: 40%;
+  left: 5%;
+  width: 28px;
+  opacity: .6;
+  animation: leafFloat 9.5s ease-in-out infinite reverse;
+  animation-delay: -2s;
+}
+
+.deco-scatter-3 {
+  bottom: 28%;
+  right: 5%;
+  width: 24px;
+  opacity: .55;
+  animation: leafFloat 7s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+.deco-scatter-4 {
+  top: 68%;
+  left: 9%;
+  width: 30px;
+  opacity: .55;
+  animation: leafFloat 8.5s ease-in-out infinite reverse;
+  animation-delay: -1s;
+}
+
+.deco-scatter-5 {
+  top: 82%;
+  right: 10%;
+  width: 22px;
+  opacity: .5;
+  animation: leafFloat 6.5s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+@keyframes swayTL {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(2.5deg); }
+  70% { transform: rotate(-0.8deg); }
+}
+
+@keyframes swayTR {
+  0%, 100% { transform: rotate(0deg); }
+  35% { transform: rotate(-2deg); }
+  65% { transform: rotate(1deg); }
+}
+
+@keyframes bloomPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.03); opacity: 0.9; }
+}
+
+@keyframes leafFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(3px, -4px) rotate(5deg); }
+  50% { transform: translate(-2px, -7px) rotate(-3deg); }
+  75% { transform: translate(4px, -3px) rotate(4deg); }
+}
+
+/* ============================================
+   Feuerwerk-Canvas
+   ============================================ */
+#firework-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ============================================
+   Abschluss-Spruch
+   ============================================ */
+#game-quote {
+  font-size: 1.1rem;
+  color: #F5E6D0;
+  font-style: italic;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  animation: quoteIn 0.5s ease 0.2s both;
+}
+
+@keyframes quoteIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }

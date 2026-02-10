@@ -20,7 +20,9 @@
     <script>
         // Service Worker registrieren für PWA / Offline-Support
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js');
+            navigator.serviceWorker.register('service-worker.js').then(reg => {
+                reg.update(); // Immer nach Updates suchen
+            });
         }
     </script>
 </body>
