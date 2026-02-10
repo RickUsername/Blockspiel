@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6B4226"/>
+      <stop offset="100%" stop-color="#4A2E16"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- Holzmaserung -->
+  <line x1="0" y1="80" x2="512" y2="85" stroke="rgba(0,0,0,0.08)" stroke-width="2"/>
+  <line x1="0" y1="160" x2="512" y2="155" stroke="rgba(0,0,0,0.06)" stroke-width="2"/>
+  <line x1="0" y1="240" x2="512" y2="245" stroke="rgba(0,0,0,0.08)" stroke-width="2"/>
+  <line x1="0" y1="320" x2="512" y2="315" stroke="rgba(0,0,0,0.06)" stroke-width="2"/>
+  <line x1="0" y1="400" x2="512" y2="405" stroke="rgba(0,0,0,0.08)" stroke-width="2"/>
+  <!-- Block 1 - Rot -->
+  <rect x="80" y="90" width="100" height="100" rx="10" fill="#C0392B"/>
+  <rect x="80" y="90" width="100" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Block 2 - Blau -->
+  <rect x="200" y="90" width="100" height="100" rx="10" fill="#2980B9"/>
+  <rect x="200" y="90" width="100" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Block 3 - Lila -->
+  <rect x="320" y="90" width="100" height="100" rx="10" fill="#8E44AD"/>
+  <rect x="320" y="90" width="100" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Block 4 - Grün -->
+  <rect x="80" y="210" width="100" height="100" rx="10" fill="#27AE60"/>
+  <rect x="80" y="210" width="100" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Block 5 - Orange -->
+  <rect x="200" y="210" width="100" height="100" rx="10" fill="#F39C12"/>
+  <rect x="200" y="210" width="100" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Block 6 - Türkis -->
+  <rect x="320" y="210" width="100" height="100" rx="10" fill="#16A085"/>
+  <rect x="320" y="210" width="100" height="10" rx="5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Text -->
+  <text x="256" y="410" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="60" fill="#F5E6D0" letter-spacing="4">BLOCK</text>
+</svg>
