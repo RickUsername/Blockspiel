@@ -7,16 +7,19 @@
 // Konstanten
 // ============================================================
 const GRID_SIZE = 10;
-const BLOCKS_FOR_TIMER = 100;   // Ab 100 platzierten Blöcken: Timer zählt
-const COLORS = [
-  '#C0392B', // Rot
-  '#2980B9', // Blau
-  '#27AE60', // Grün
-  '#F39C12', // Orange
-  '#8E44AD', // Lila
-  '#16A085', // Türkis
-  '#D35400', // Dunkelorange
+const CELLS_FOR_TIMER = 100;    // Ab 100 platzierten Zellen: Tempo-Multiplikator aktiv
+const CELLS_FOR_RESERVE = 200;  // Ab 200 platzierten Zellen: Reserve-Box aktiv
+// Holzarten-Palette (Basis, Maserung-dunkel, Maserung-hell)
+const WOOD_TYPES = [
+  { base: '#D4A45A', dark: '#B8873A', light: '#E8C88A', name: 'Ahorn' },
+  { base: '#A0582D', dark: '#7B3F18', light: '#C47A4E', name: 'Kirsche' },
+  { base: '#7A5230', dark: '#5C3A1E', light: '#9E7650', name: 'Nussbaum' },
+  { base: '#C49040', dark: '#A07028', light: '#DEB060', name: 'Eiche' },
+  { base: '#8B4C28', dark: '#6A3418', light: '#B0704A', name: 'Mahagoni' },
+  { base: '#CCAD82', dark: '#B09468', light: '#E8D4B0', name: 'Birke' },
+  { base: '#B07038', dark: '#8A5020', light: '#D09458', name: 'Teak' },
 ];
+const COLORS = WOOD_TYPES.map(w => w.base);
 
 // Alle verfügbaren Block-Formen mit Größenkategorie (1=klein, 2=mittel, 3=groß)
 const SHAPES = [
@@ -58,11 +61,16 @@ let score = 0;
 let highscore = 0;
 let currentPieces = [];
 let gameOver = false;
-let totalBlocksPlaced = 0;   // Zählt einzelne Blöcke (Zellen), nicht Formen
-let timerActive = false;
-let timerStart = 0;
-let timerInterval = null;
-let trashUsed = false;        // Hilfekasten: einmal pro Spiel nach 100 Blöcken
+let totalBlocksPlaced = 0;   // Zählt einzelne Zellen, nicht Formen
+
+// Reserve-Box
+let reservePiece = null;
+let reserveUnlocked = false;
+
+// Tempo-Multiplikator (Pro-Form-Timer)
+let formStartTime = 0;
+let timeMultiplierActive = false;
+let tempoInterval = null;
 
 // Drag-State
 let dragPiece = null;
@@ -74,13 +82,12 @@ let hoverCells = [];
 // DOM-Referenzen
 let boardEl, previewEl, scoreEl, highscoreEl, gameOverEl, finalScoreEl;
 let canvasBoard, ctx, cellSize = 0;
-let timerEl, trashEl, trashCountEl;
+let reserveEl, tempoEl;
 
 // ============================================================
 // Gaußsche Formauswahl
 // ============================================================
 function pickRandomShape() {
-  // Gewichtete Auswahl basierend auf Größenkategorie
   const weighted = [];
   for (const shape of SHAPES) {
     const w = SIZE_WEIGHTS[shape.size] || 1;
@@ -114,9 +121,9 @@ function buildDOM() {
           <span class="score-label">Rekord</span>
           <span id="highscore">0</span>
         </div>
-        <div class="score-box timer-box hidden" id="timer-box">
-          <span class="score-label">Zeit</span>
-          <span id="timer">0:00</span>
+        <div class="score-box tempo-box hidden" id="tempo-box">
+          <span class="score-label">Tempo</span>
+          <span id="tempo">x1.0</span>
         </div>
       </div>
     </header>
@@ -125,9 +132,9 @@ function buildDOM() {
     </div>
     <div id="preview-row">
       <div id="preview"></div>
-      <div id="trash" class="hidden" title="Unpassenden Block hier ablegen">
-        <span id="trash-icon">🗑</span>
-        <span id="trash-count">1×</span>
+      <div id="reserve" class="locked" title="Reserve-Box: Block zwischenspeichern">
+        <span class="reserve-label">Reserve</span>
+        <canvas id="reserve-canvas" width="0" height="0"></canvas>
       </div>
     </div>
     <div id="block-counter"></div>
@@ -135,7 +142,6 @@ function buildDOM() {
       <div id="game-over-box">
         <h2>Spiel vorbei</h2>
         <p>Punkte: <span id="final-score">0</span></p>
-        <p id="final-time-row" class="hidden">Zeit-Bonus: <span id="final-time-bonus">0</span></p>
         <button id="restart-btn">Neues Spiel</button>
       </div>
     </div>
@@ -149,11 +155,13 @@ function buildDOM() {
   highscoreEl = document.getElementById('highscore');
   gameOverEl = document.getElementById('game-over');
   finalScoreEl = document.getElementById('final-score');
-  timerEl = document.getElementById('timer');
-  trashEl = document.getElementById('trash');
-  trashCountEl = document.getElementById('trash-count');
+  reserveEl = document.getElementById('reserve');
+  tempoEl = document.getElementById('tempo');
 
   document.getElementById('restart-btn').addEventListener('click', newGame);
+
+  // Reserve-Box: Klick/Tap zum Tauschen
+  reserveEl.addEventListener('click', onReserveSwap);
 
   // Drag-Events (Mouse + Touch)
   document.addEventListener('mousemove', onDragMove);
@@ -178,8 +186,10 @@ function resizeBoard() {
   canvasBoard.style.width = boardPx + 'px';
   canvasBoard.style.height = boardPx + 'px';
 
+  woodCache = null; // Holztextur neu generieren bei Größenänderung
   drawBoard();
   renderPreview();
+  renderReserve();
 }
 
 // ============================================================
@@ -189,22 +199,26 @@ function newGame() {
   grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
   score = 0;
   totalBlocksPlaced = 0;
-  timerActive = false;
-  trashUsed = false;
+  reservePiece = null;
+  reserveUnlocked = false;
+  timeMultiplierActive = false;
+  formStartTime = 0;
   gameOver = false;
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = null;
+  if (tempoInterval) clearInterval(tempoInterval);
+  tempoInterval = null;
   gameOverEl.classList.add('hidden');
-  document.getElementById('timer-box').classList.add('hidden');
-  trashEl.classList.add('hidden');
+  document.getElementById('tempo-box').classList.add('hidden');
+  reserveEl.classList.add('locked');
+  reserveEl.classList.remove('empty');
   updateScore();
   updateBlockCounter();
   spawnPieces();
   drawBoard();
+  renderReserve();
 }
 
 // ============================================================
-// Stücke generieren (Gaußsche Verteilung)
+// Stücke generieren (nur beim Spielstart)
 // ============================================================
 function spawnPieces() {
   currentPieces = [];
@@ -213,20 +227,36 @@ function spawnPieces() {
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     currentPieces.push({ shape, color });
   }
+  formStartTime = Date.now();
   renderPreview();
 }
 
+// ============================================================
+// Queue-Verwaltung (FIFO)
+// ============================================================
+function shiftQueue() {
+  currentPieces.shift();
+  const shape = pickRandomShape();
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+  currentPieces.push({ shape, color });
+  formStartTime = Date.now();
+  renderPreview();
+}
+
+// ============================================================
+// Vorschau rendern (FIFO: nur Index 0 ist ziehbar)
+// ============================================================
 function renderPreview() {
   previewEl.innerHTML = '';
   currentPieces.forEach((piece, idx) => {
-    if (!piece) {
-      const empty = document.createElement('div');
-      empty.className = 'preview-slot empty';
-      previewEl.appendChild(empty);
-      return;
-    }
     const slot = document.createElement('div');
     slot.className = 'preview-slot';
+
+    if (idx === 0) {
+      slot.classList.add('mandatory');
+    } else {
+      slot.classList.add('preview-only');
+    }
 
     const { shape, color } = piece;
     let maxC = 0, maxR = 0;
@@ -250,103 +280,138 @@ function renderPreview() {
 
     slot.appendChild(miniCanvas);
 
-    // Drag starten — Event auf dem ganzen Slot (nicht nur Canvas)
-    const startDrag = (clientX, clientY) => {
-      if (gameOver || !currentPieces[idx]) return;
-      dragPiece = { shape: piece.shape, color: piece.color, index: idx };
-      isDragging = true;
-      const rect = slot.getBoundingClientRect();
-      dragOffset.x = clientX - rect.left;
-      dragOffset.y = clientY - rect.top;
-      dragPos.x = clientX;
-      dragPos.y = clientY;
-      slot.classList.add('dragging');
-    };
+    // Nur der Pflicht-Block (Index 0) ist ziehbar
+    if (idx === 0) {
+      const startDrag = (clientX, clientY) => {
+        if (gameOver) return;
+        dragPiece = { shape: piece.shape, color: piece.color, index: idx };
+        isDragging = true;
+        const rect = slot.getBoundingClientRect();
+        dragOffset.x = clientX - rect.left;
+        dragOffset.y = clientY - rect.top;
+        dragPos.x = clientX;
+        dragPos.y = clientY;
+        slot.classList.add('dragging');
+      };
 
-    slot.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      startDrag(e.clientX, e.clientY);
-    });
-    slot.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const t = e.touches[0];
-      startDrag(t.clientX, t.clientY);
-    }, { passive: false });
+      slot.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startDrag(e.clientX, e.clientY);
+      });
+      slot.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        startDrag(t.clientX, t.clientY);
+      }, { passive: false });
+    }
 
     previewEl.appendChild(slot);
   });
-
-  // Trash-Drop-Events
-  setupTrashDrop();
 }
 
 // ============================================================
-// Hilfekasten (Trash)
+// Reserve-Box
 // ============================================================
-function setupTrashDrop() {
-  // Trash-Bereich als Drop-Zone: wenn man einen Block draufzieht
-  trashEl.onmouseup = onTrashDrop;
-  trashEl.ontouchend = onTrashDrop;
+function renderReserve() {
+  const canvas = document.getElementById('reserve-canvas');
+  if (!canvas) return;
+
+  if (!reserveUnlocked) {
+    reserveEl.classList.add('locked');
+    reserveEl.classList.remove('empty');
+    canvas.width = 0;
+    canvas.height = 0;
+    return;
+  }
+
+  reserveEl.classList.remove('locked');
+
+  if (!reservePiece) {
+    canvas.width = 0;
+    canvas.height = 0;
+    reserveEl.classList.add('empty');
+    return;
+  }
+
+  reserveEl.classList.remove('empty');
+
+  const { shape, color } = reservePiece;
+  let maxC = 0, maxR = 0;
+  shape.cells.forEach(([c, r]) => {
+    if (c > maxC) maxC = c;
+    if (r > maxR) maxR = r;
+  });
+  const cols = maxC + 1;
+  const rows = maxR + 1;
+  const rCellSize = Math.min(20, Math.floor(50 / Math.max(cols, rows)));
+
+  canvas.width = cols * rCellSize;
+  canvas.height = rows * rCellSize;
+  const rctx = canvas.getContext('2d');
+  rctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  shape.cells.forEach(([c, r]) => {
+    drawBlock(rctx, c * rCellSize, r * rCellSize, rCellSize, color);
+  });
 }
 
-function onTrashDrop(e) {
-  if (!isDragging || !dragPiece || trashUsed) return;
-  // Block verwerfen
-  currentPieces[dragPiece.index] = null;
-  trashUsed = true;
-  trashEl.classList.add('used');
-  trashCountEl.textContent = '0×';
-  isDragging = false;
-  dragPiece = null;
-  hoverCells = [];
-  drawBoard();
-  document.querySelectorAll('.preview-slot').forEach(s => s.classList.remove('dragging'));
+function onReserveSwap() {
+  if (gameOver || !reserveUnlocked || isDragging) return;
+  if (currentPieces.length === 0) return;
 
-  if (currentPieces.every(p => p === null)) {
-    spawnPieces();
+  const mandatory = currentPieces[0];
+  if (!mandatory) return;
+
+  if (reservePiece === null) {
+    // Reserve leer: Block reinlegen, Queue rückt nach
+    reservePiece = mandatory;
+    shiftQueue();
   } else {
+    // Reserve belegt: Tausch, Queue rückt NICHT nach
+    const temp = reservePiece;
+    reservePiece = mandatory;
+    currentPieces[0] = temp;
+    formStartTime = Date.now();
     renderPreview();
   }
+
+  renderReserve();
   checkGameOver();
 }
 
-function checkTrashUnlock() {
-  if (totalBlocksPlaced >= BLOCKS_FOR_TIMER && !trashUsed) {
-    trashEl.classList.remove('hidden');
+function checkReserveUnlock() {
+  if (totalBlocksPlaced >= CELLS_FOR_RESERVE && !reserveUnlocked) {
+    reserveUnlocked = true;
+    renderReserve();
   }
 }
 
 // ============================================================
-// Timer-System
+// Tempo-Multiplikator (Pro-Form-Timer)
 // ============================================================
-function startTimer() {
-  if (timerActive) return;
-  timerActive = true;
-  timerStart = Date.now();
-  document.getElementById('timer-box').classList.remove('hidden');
-  timerInterval = setInterval(updateTimerDisplay, 1000);
-  updateTimerDisplay();
+function getTimeMultiplier() {
+  if (!timeMultiplierActive) return 1.0;
+  const elapsed = (Date.now() - formStartTime) / 1000;
+  if (elapsed < 5) return 1.5;
+  if (elapsed < 15) return 1.2;
+  return 1.0;
 }
 
-function updateTimerDisplay() {
-  if (!timerActive) return;
-  const elapsed = Math.floor((Date.now() - timerStart) / 1000);
-  const mins = Math.floor(elapsed / 60);
-  const secs = elapsed % 60;
-  timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
+function updateTempoDisplay() {
+  if (!timeMultiplierActive) return;
+  const mult = getTimeMultiplier();
+  tempoEl.textContent = 'x' + mult.toFixed(1);
+  if (mult >= 1.5) tempoEl.style.color = '#2ECC71';
+  else if (mult >= 1.2) tempoEl.style.color = '#F1C40F';
+  else tempoEl.style.color = '#FF6B6B';
 }
 
-function getTimerBonus() {
-  if (!timerActive) return 0;
-  const elapsed = Math.floor((Date.now() - timerStart) / 1000);
-  // Bonus: je schneller, desto mehr Punkte
-  // Basis 500, minus 1 pro Sekunde, mindestens 0
-  return Math.max(0, 500 - elapsed);
-}
-
-function checkTimerStart() {
-  if (totalBlocksPlaced >= BLOCKS_FOR_TIMER && !timerActive) {
-    startTimer();
+function checkTempoStart() {
+  if (totalBlocksPlaced >= CELLS_FOR_TIMER && !timeMultiplierActive) {
+    timeMultiplierActive = true;
+    document.getElementById('tempo-box').classList.remove('hidden');
+    tempoInterval = setInterval(updateTempoDisplay, 100);
+    updateTempoDisplay();
   }
 }
 
@@ -355,10 +420,10 @@ function checkTimerStart() {
 // ============================================================
 function updateBlockCounter() {
   const el = document.getElementById('block-counter');
-  if (totalBlocksPlaced < BLOCKS_FOR_TIMER) {
-    el.textContent = totalBlocksPlaced + ' / ' + BLOCKS_FOR_TIMER + ' Blöcke';
+  if (totalBlocksPlaced < CELLS_FOR_RESERVE) {
+    el.textContent = totalBlocksPlaced + ' / ' + CELLS_FOR_RESERVE + ' Zellen';
   } else {
-    el.textContent = totalBlocksPlaced + ' Blöcke';
+    el.textContent = totalBlocksPlaced + ' Zellen';
   }
 }
 
@@ -431,24 +496,27 @@ function tryPlace() {
   });
 
   const cellCount = hoverCells.length;
-  score += cellCount;
+
+  // Basispunkte mit Tempo-Multiplikator
+  let basePoints = cellCount;
+  if (timeMultiplierActive) {
+    const mult = getTimeMultiplier();
+    basePoints = Math.round(cellCount * mult);
+  }
+  score += basePoints;
   totalBlocksPlaced += cellCount;
 
-  currentPieces[dragPiece.index] = null;
-
+  // Linien löschen (eigenes Scoring)
   clearLines();
   updateScore();
   updateBlockCounter();
 
-  // Timer & Trash nach 100 Blöcken prüfen
-  checkTimerStart();
-  checkTrashUnlock();
+  // Tempo & Reserve prüfen
+  checkTempoStart();
+  checkReserveUnlock();
 
-  if (currentPieces.every(p => p === null)) {
-    spawnPieces();
-  } else {
-    renderPreview();
-  }
+  // Queue nachrücken
+  shiftQueue();
 
   checkGameOver();
 }
@@ -457,7 +525,6 @@ function tryPlace() {
 // Reihen und Spalten löschen
 // ============================================================
 function clearLines() {
-  let cleared = 0;
   let rowsToClear = [];
   let colsToClear = [];
 
@@ -474,22 +541,35 @@ function clearLines() {
     if (full) colsToClear.push(c);
   }
 
+  if (rowsToClear.length === 0 && colsToClear.length === 0) return;
+
+  // Verschwundene Zellen zählen (Überschneidungen nur 1x)
+  const clearedSet = new Set();
+  rowsToClear.forEach(r => {
+    for (let c = 0; c < GRID_SIZE; c++) clearedSet.add(r * GRID_SIZE + c);
+  });
+  colsToClear.forEach(c => {
+    for (let r = 0; r < GRID_SIZE; r++) clearedSet.add(r * GRID_SIZE + c);
+  });
+
+  let lineScore = clearedSet.size; // 1 Punkt pro verschwundene Zelle
+
+  // Bei Zeilen UND Spalten gleichzeitig: x2
+  if (rowsToClear.length > 0 && colsToClear.length > 0) {
+    lineScore *= 2;
+  }
+
+  score += lineScore;
+
+  // Grid leeren
   rowsToClear.forEach(r => {
     for (let c = 0; c < GRID_SIZE; c++) grid[r][c] = null;
-    cleared++;
   });
   colsToClear.forEach(c => {
     for (let r = 0; r < GRID_SIZE; r++) grid[r][c] = null;
-    cleared++;
   });
 
-  if (cleared > 0) {
-    score += cleared * 10;
-    if (cleared > 1) {
-      score += (cleared - 1) * 20;
-    }
-    animateClear(rowsToClear, colsToClear);
-  }
+  animateClear(rowsToClear, colsToClear);
 }
 
 function animateClear(rows, cols) {
@@ -510,28 +590,29 @@ function animateClear(rows, cols) {
 // Game Over
 // ============================================================
 function checkGameOver() {
-  const remaining = currentPieces.filter(p => p !== null);
-  if (remaining.length === 0) return;
+  if (currentPieces.length === 0) return;
 
-  for (const piece of remaining) {
-    if (canPlaceAnywhere(piece.shape)) return;
+  const mandatory = currentPieces[0];
+  if (!mandatory) return;
+
+  // Pflicht-Block passt? -> Kein Game Over
+  if (canPlaceAnywhere(mandatory.shape)) return;
+
+  // Reserve-Möglichkeiten prüfen
+  if (reserveUnlocked) {
+    if (reservePiece !== null) {
+      // Reserve belegt + passt? -> Kein Game Over
+      if (canPlaceAnywhere(reservePiece.shape)) return;
+    } else {
+      // Reserve leer + nächster Block passt? -> Kein Game Over
+      if (currentPieces.length > 1 && currentPieces[1] &&
+          canPlaceAnywhere(currentPieces[1].shape)) return;
+    }
   }
 
-  // Wenn Trash noch verfügbar, noch kein Game Over
-  if (!trashUsed && totalBlocksPlaced >= BLOCKS_FOR_TIMER) return;
-
+  // Game Over (kein Zeit-Bonus mehr)
   gameOver = true;
-  if (timerInterval) clearInterval(timerInterval);
-
-  // Zeit-Bonus berechnen
-  const timeBonus = getTimerBonus();
-  if (timerActive && timeBonus > 0) {
-    score += timeBonus;
-    document.getElementById('final-time-row').classList.remove('hidden');
-    document.getElementById('final-time-bonus').textContent = '+' + timeBonus;
-  } else {
-    document.getElementById('final-time-row').classList.add('hidden');
-  }
+  if (tempoInterval) clearInterval(tempoInterval);
 
   if (score > highscore) {
     highscore = score;
@@ -561,34 +642,127 @@ function canPlaceAnywhere(shape) {
 }
 
 // ============================================================
-// Zeichnen
+// Zeichnen — Premium-Holzoptik
 // ============================================================
-function drawBoard() {
-  const size = cellSize * GRID_SIZE;
-  ctx.fillStyle = '#8B6F47';
-  ctx.fillRect(0, 0, size, size);
 
-  // Holzmaserung
-  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-  ctx.lineWidth = 1;
-  for (let y = 0; y < size; y += 4) {
-    ctx.beginPath();
-    ctx.moveTo(0, y + Math.sin(y * 0.05) * 2);
-    ctx.lineTo(size, y + Math.sin(y * 0.05 + 1) * 2);
-    ctx.stroke();
+// Holz-Textur einmalig als Off-Screen-Canvas cachen
+let woodCache = null;
+let woodCacheSize = 0;
+
+function generateWoodTexture(size) {
+  if (woodCache && woodCacheSize === size) return woodCache;
+  woodCacheSize = size;
+  const oc = document.createElement('canvas');
+  oc.width = size;
+  oc.height = size;
+  const ox = oc.getContext('2d');
+
+  // Basis: warmer Nussbaumton mit sanftem Verlauf
+  const baseGrad = ox.createLinearGradient(0, 0, size, size);
+  baseGrad.addColorStop(0, '#9B7B55');
+  baseGrad.addColorStop(0.3, '#8B6B45');
+  baseGrad.addColorStop(0.6, '#7D5F3B');
+  baseGrad.addColorStop(1, '#6E5232');
+  ox.fillStyle = baseGrad;
+  ox.fillRect(0, 0, size, size);
+
+  // Maserung Schicht 1: breite wellige Streifen
+  ox.globalAlpha = 0.07;
+  for (let y = 0; y < size; y += 3) {
+    ox.beginPath();
+    ox.moveTo(0, y);
+    for (let x = 0; x < size; x += 8) {
+      const wave = Math.sin(y * 0.02 + x * 0.005) * 3
+                 + Math.sin(y * 0.05) * 1.5
+                 + Math.sin(x * 0.01 + y * 0.03) * 2;
+      ox.lineTo(x, y + wave);
+    }
+    ox.strokeStyle = (y % 6 < 3) ? '#3A2010' : '#B8956A';
+    ox.lineWidth = 1.5;
+    ox.stroke();
   }
 
-  // Gitterlinien
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 1;
+  // Maserung Schicht 2: feine Poren
+  ox.globalAlpha = 0.04;
+  ox.strokeStyle = '#2A1508';
+  ox.lineWidth = 0.5;
+  for (let y = 0; y < size; y += 2) {
+    ox.beginPath();
+    ox.moveTo(0, y + Math.sin(y * 0.08) * 1.5);
+    ox.lineTo(size, y + Math.sin(y * 0.08 + 2) * 1.5);
+    ox.stroke();
+  }
+
+  // Maserung Schicht 3: breite dunkle Bänder (Jahresringe-Effekt)
+  ox.globalAlpha = 0.035;
+  for (let y = 0; y < size; y += 18) {
+    const bandWidth = 6 + Math.sin(y * 0.1) * 3;
+    ox.fillStyle = '#2A1508';
+    ox.beginPath();
+    ox.moveTo(0, y);
+    for (let x = 0; x <= size; x += 4) {
+      const wave = Math.sin(y * 0.015 + x * 0.008) * 4
+                 + Math.sin(x * 0.02) * 2;
+      ox.lineTo(x, y + wave);
+    }
+    for (let x = size; x >= 0; x -= 4) {
+      const wave = Math.sin(y * 0.015 + x * 0.008) * 4
+                 + Math.sin(x * 0.02) * 2;
+      ox.lineTo(x, y + wave + bandWidth);
+    }
+    ox.closePath();
+    ox.fill();
+  }
+
+  // Leichter Glanzeffekt von oben links
+  ox.globalAlpha = 1;
+  const sheen = ox.createRadialGradient(
+    size * 0.2, size * 0.15, 0,
+    size * 0.2, size * 0.15, size * 0.8
+  );
+  sheen.addColorStop(0, 'rgba(255,240,200,0.08)');
+  sheen.addColorStop(0.5, 'rgba(255,240,200,0.02)');
+  sheen.addColorStop(1, 'rgba(0,0,0,0.04)');
+  ox.fillStyle = sheen;
+  ox.fillRect(0, 0, size, size);
+
+  woodCache = oc;
+  return oc;
+}
+
+function drawBoard() {
+  const size = cellSize * GRID_SIZE;
+
+  // Holz-Textur zeichnen
+  const wood = generateWoodTexture(size);
+  ctx.drawImage(wood, 0, 0);
+
+  // Gefräste Gitterlinien (doppelte Linie für Tiefe)
   for (let i = 0; i <= GRID_SIZE; i++) {
+    const pos = i * cellSize;
+
+    // Schattenlinie (dunkel, leicht versetzt)
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(i * cellSize, 0);
-    ctx.lineTo(i * cellSize, size);
+    ctx.moveTo(pos + 0.5, 0);
+    ctx.lineTo(pos + 0.5, size);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(0, i * cellSize);
-    ctx.lineTo(size, i * cellSize);
+    ctx.moveTo(0, pos + 0.5);
+    ctx.lineTo(size, pos + 0.5);
+    ctx.stroke();
+
+    // Lichtlinie (hell, daneben — ergibt eingefrästen Look)
+    ctx.strokeStyle = 'rgba(255,220,160,0.06)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(pos + 1.5, 0);
+    ctx.lineTo(pos + 1.5, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, pos + 1.5);
+    ctx.lineTo(size, pos + 1.5);
     ctx.stroke();
   }
 
@@ -610,18 +784,140 @@ function drawBoard() {
   }
 }
 
+function getWoodType(color) {
+  const idx = COLORS.indexOf(color);
+  return idx >= 0 ? WOOD_TYPES[idx] : { base: color, dark: darkenColor(color, 30), light: lightenColor(color, 30) };
+}
+
 function drawBlock(context, x, y, size, color, alpha = 1) {
-  const pad = 1;
+  const pad = 2;
+  const r = Math.min(4, size * 0.12);
+  const bx = x + pad;
+  const by = y + pad;
+  const bw = size - pad * 2;
+  const bh = size - pad * 2;
+  const wood = getWoodType(color);
+
   context.globalAlpha = alpha;
-  context.fillStyle = color;
-  context.fillRect(x + pad, y + pad, size - pad * 2, size - pad * 2);
-  context.fillStyle = 'rgba(255,255,255,0.3)';
-  context.fillRect(x + pad, y + pad, size - pad * 2, 3);
-  context.fillRect(x + pad, y + pad, 3, size - pad * 2);
-  context.fillStyle = 'rgba(0,0,0,0.2)';
-  context.fillRect(x + pad, y + size - pad - 3, size - pad * 2, 3);
-  context.fillRect(x + size - pad - 3, y + pad, 3, size - pad * 2);
+
+  // Schatten unter dem Block
+  context.fillStyle = 'rgba(0,0,0,0.3)';
+  roundRect(context, bx + 1.5, by + 1.5, bw, bh, r);
+  context.fill();
+
+  // Block-Körper: Holz-Grundverlauf
+  const bodyGrad = context.createLinearGradient(bx, by, bx + bw * 0.3, by + bh);
+  bodyGrad.addColorStop(0, wood.light);
+  bodyGrad.addColorStop(0.35, wood.base);
+  bodyGrad.addColorStop(0.7, darkenColor(wood.base, 10));
+  bodyGrad.addColorStop(1, wood.dark);
+  context.fillStyle = bodyGrad;
+  roundRect(context, bx, by, bw, bh, r);
+  context.fill();
+
+  // Holzmaserung auf dem Block
+  context.save();
+  roundRect(context, bx, by, bw, bh, r);
+  context.clip();
+
+  // Maserungslinien — wellige horizontale Streifen
+  const seed = (x * 7 + y * 13) % 100; // Pseudo-Seed pro Position
+  for (let ly = 0; ly < bh; ly += 2.5) {
+    context.beginPath();
+    context.moveTo(bx, by + ly);
+    for (let lx = 0; lx <= bw; lx += 4) {
+      const wave = Math.sin((ly + seed) * 0.15 + lx * 0.04) * 1.2
+                 + Math.sin((ly + seed) * 0.08 + lx * 0.02) * 0.8;
+      context.lineTo(bx + lx, by + ly + wave);
+    }
+    context.strokeStyle = (ly % 5 < 2.5)
+      ? 'rgba(0,0,0,0.1)'
+      : ('rgba(255,255,255,0.06)');
+    context.lineWidth = 0.7;
+    context.stroke();
+  }
+
+  // Breite Maserungsbänder (wie Jahresringe im Querschnitt)
+  for (let ly = 3 + (seed % 5); ly < bh; ly += 7 + (seed % 4)) {
+    context.globalAlpha = alpha * 0.06;
+    context.fillStyle = wood.dark;
+    const bandH = 2 + Math.sin(ly * 0.3) * 1;
+    context.fillRect(bx, by + ly, bw, bandH);
+  }
+  context.globalAlpha = alpha;
+
+  context.restore();
+
+  // 3D-Kanten: oben/links hell, unten/rechts dunkel
+  // Oberkante — warmer Lichtreflex
+  const topGrad = context.createLinearGradient(bx, by, bx, by + bh * 0.2);
+  topGrad.addColorStop(0, 'rgba(255,240,200,0.3)');
+  topGrad.addColorStop(1, 'rgba(255,240,200,0)');
+  context.fillStyle = topGrad;
+  roundRect(context, bx, by, bw, bh * 0.25, r);
+  context.fill();
+
+  // Linke Kante
+  context.fillStyle = 'rgba(255,240,200,0.1)';
+  context.fillRect(bx, by + r, Math.max(2, bw * 0.07), bh - r * 2);
+
+  // Unterkante
+  context.fillStyle = 'rgba(0,0,0,0.18)';
+  context.fillRect(bx + r, by + bh - Math.max(2, bh * 0.07), bw - r * 2, Math.max(2, bh * 0.07));
+
+  // Rechte Kante
+  context.fillStyle = 'rgba(0,0,0,0.12)';
+  context.fillRect(bx + bw - Math.max(2, bw * 0.07), by + r, Math.max(2, bw * 0.07), bh - r * 2);
+
+  // Feiner Rand (wie geöltes/lackiertes Holz)
+  context.strokeStyle = 'rgba(0,0,0,0.2)';
+  context.lineWidth = 0.5;
+  roundRect(context, bx, by, bw, bh, r);
+  context.stroke();
+
+  // Glanzpunkt
+  const gloss = context.createRadialGradient(
+    bx + bw * 0.3, by + bh * 0.2, 0,
+    bx + bw * 0.3, by + bh * 0.2, bw * 0.45
+  );
+  gloss.addColorStop(0, 'rgba(255,250,230,0.18)');
+  gloss.addColorStop(1, 'rgba(255,250,230,0)');
+  context.fillStyle = gloss;
+  roundRect(context, bx, by, bw, bh, r);
+  context.fill();
+
   context.globalAlpha = 1;
+}
+
+// Hilfsfunktionen für Farben und Formen
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function lightenColor(hex, amount) {
+  const num = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, (num >> 16) + amount);
+  const g = Math.min(255, ((num >> 8) & 0xFF) + amount);
+  const b = Math.min(255, (num & 0xFF) + amount);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function darkenColor(hex, amount) {
+  const num = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, (num >> 16) - amount);
+  const g = Math.max(0, ((num >> 8) & 0xFF) - amount);
+  const b = Math.max(0, (num & 0xFF) - amount);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
 // ============================================================
