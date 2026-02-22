@@ -82,7 +82,7 @@ let currentPieces = [];
 let gameOver = false;
 let totalBlocksPlaced = 0;
 let reservePiece = null;
-let reserveUnlocked = false;
+let reserveUnlocked = true;
 let formStartTime = 0;
 let timeMultiplierActive = false;
 let tempoInterval = null;
@@ -267,7 +267,7 @@ function buildDOM() {
     </div>
     <div id="preview-row">
       <div id="preview"></div>
-      <div id="reserve" class="locked" title="Reserve-Box">
+      <div id="reserve" class="empty" title="Reserve-Box">
         <span class="reserve-label">Reserve</span>
         <canvas id="reserve-canvas" width="0" height="0"></canvas>
       </div>
@@ -503,7 +503,7 @@ function newGame() {
   score = 0;
   totalBlocksPlaced = 0;
   reservePiece = null;
-  reserveUnlocked = false;
+  reserveUnlocked = true;
   timeMultiplierActive = false;
   formStartTime = 0;
   gameOver = false;
@@ -512,8 +512,8 @@ function newGame() {
   stopFireworks();
   gameOverEl.classList.add('hidden');
   document.getElementById('tempo-box').classList.add('hidden');
-  reserveEl.classList.add('locked');
-  reserveEl.classList.remove('empty');
+  reserveEl.classList.remove('locked');
+  reserveEl.classList.add('empty');
   updateScore();
   updateBlockCounter();
   spawnPieces();
@@ -659,11 +659,7 @@ function checkTempoStart() {
 // ============================================================
 function updateBlockCounter() {
   const el = document.getElementById('block-counter');
-  if (totalBlocksPlaced < CELLS_FOR_RESERVE) {
-    el.textContent = totalBlocksPlaced + ' / ' + CELLS_FOR_RESERVE + ' \u2192 Reserve';
-  } else {
-    el.textContent = totalBlocksPlaced + ' / ' + MAX_CELLS + ' Zellen';
-  }
+  el.textContent = totalBlocksPlaced + ' / ' + MAX_CELLS + ' Zellen';
 }
 
 // ============================================================
