@@ -37,9 +37,18 @@ const SHAPES = [
   { cells: [[0,0],[1,0],[2,0],[0,1]], name: 'bigL2', size: 2 },
   { cells: [[0,0],[1,0],[1,1],[1,2]], name: 'bigL3', size: 2 },
   { cells: [[0,0],[1,0],[2,0],[2,1]], name: 'bigL4', size: 2 },
+  { cells: [[2,0],[0,1],[1,1],[2,1]], name: 'bigL5', size: 2 },
+  { cells: [[1,0],[1,1],[0,2],[1,2]], name: 'bigJ1', size: 2 },
+  { cells: [[0,0],[0,1],[1,1],[2,1]], name: 'bigJ2', size: 2 },
+  { cells: [[0,0],[1,0],[0,1],[0,2]], name: 'bigJ3', size: 2 },
   { cells: [[0,0],[1,0],[2,0],[1,1]], name: 'T1', size: 2 },
+  { cells: [[0,0],[0,1],[1,1],[0,2]], name: 'T2', size: 2 },
+  { cells: [[1,0],[0,1],[1,1],[2,1]], name: 'T3', size: 2 },
+  { cells: [[1,0],[0,1],[1,1],[1,2]], name: 'T4', size: 2 },
   { cells: [[1,0],[2,0],[0,1],[1,1]], name: 'S1', size: 2 },
+  { cells: [[0,0],[0,1],[1,1],[1,2]], name: 'S2', size: 2 },
   { cells: [[0,0],[1,0],[1,1],[2,1]], name: 'Z1', size: 2 },
+  { cells: [[1,0],[0,1],[1,1],[0,2]], name: 'Z2', size: 2 },
   { cells: [[0,0],[1,0],[2,0],[3,0],[4,0]], name: '1x5', size: 3 },
   { cells: [[0,0],[0,1],[0,2],[0,3],[0,4]], name: '5x1', size: 3 },
   { cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]], name: '3x3', size: 3 },
@@ -90,6 +99,8 @@ let dragPiece = null;
 let dragOffset = { x: 0, y: 0 };
 let dragPos = { x: 0, y: 0 };
 let isDragging = false;
+let dragFromReserve = false;
+let lastReserveDragEnd = 0;
 let hoverCells = [];
 let hoverValid = true;
 let boardEl, previewEl, scoreEl, highscoreEl, gameOverEl, finalScoreEl;
@@ -131,7 +142,7 @@ function playTick() {
   const lp = audioCtx.createBiquadFilter();
   lp.type = 'lowpass'; lp.frequency.value = 2500; lp.Q.value = 0.7;
   const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.12, t);
+  g.gain.setValueAtTime(0.24, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
   src.connect(lp); lp.connect(g); g.connect(audioCtx.destination);
   src.start(t);
@@ -140,7 +151,7 @@ function playTick() {
   const og = audioCtx.createGain();
   osc.connect(og); og.connect(audioCtx.destination);
   osc.type = 'sine'; osc.frequency.value = 420;
-  og.gain.setValueAtTime(0.04, t);
+  og.gain.setValueAtTime(0.08, t);
   og.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
   osc.start(t); osc.stop(t + 0.06);
 }
@@ -159,7 +170,7 @@ function playClack() {
   const bp = audioCtx.createBiquadFilter();
   bp.type = 'bandpass'; bp.frequency.value = 280; bp.Q.value = 2.5;
   const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.2, t);
+  g.gain.setValueAtTime(0.4, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
   src.connect(bp); bp.connect(g); g.connect(audioCtx.destination);
   src.start(t);
@@ -169,7 +180,7 @@ function playClack() {
     const og = audioCtx.createGain();
     o.connect(og); og.connect(audioCtx.destination);
     o.type = 'sine'; o.frequency.value = freq;
-    const vol = i === 0 ? 0.07 : 0.03;
+    const vol = i === 0 ? 0.14 : 0.06;
     og.gain.setValueAtTime(vol, t);
     og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
     o.start(t); o.stop(t + 0.12);
@@ -188,7 +199,7 @@ function playSwoosh() {
     const g = audioCtx.createGain();
     osc.type = 'sine'; osc.frequency.value = freq;
     g.gain.setValueAtTime(0, t + delay);
-    g.gain.linearRampToValueAtTime(0.1, t + delay + 0.008);
+    g.gain.linearRampToValueAtTime(0.2, t + delay + 0.008);
     g.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.35);
     osc.connect(g); g.connect(audioCtx.destination);
     osc.start(t + delay); osc.stop(t + delay + 0.35);
@@ -197,7 +208,7 @@ function playSwoosh() {
     const hg = audioCtx.createGain();
     h.type = 'sine'; h.frequency.value = freq * 2.98; // ~Terz-Oberton
     hg.gain.setValueAtTime(0, t + delay);
-    hg.gain.linearRampToValueAtTime(0.02, t + delay + 0.005);
+    hg.gain.linearRampToValueAtTime(0.04, t + delay + 0.005);
     hg.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.15);
     h.connect(hg); hg.connect(audioCtx.destination);
     h.start(t + delay); h.stop(t + delay + 0.15);
@@ -313,6 +324,23 @@ function buildDOM() {
   document.getElementById('restart-btn').addEventListener('click', newGame);
   document.getElementById('mute-btn').addEventListener('click', toggleMute);
   reserveEl.addEventListener('click', onReserveSwap);
+
+  // Drag aus Reserve-Box starten
+  const startReserveDrag = (clientX, clientY) => {
+    if (gameOver || !reserveUnlocked || !reservePiece || isDragging) return;
+    initAudio();
+    playTick();
+    dragPiece = { shape: reservePiece.shape, color: reservePiece.color, index: -1 };
+    dragFromReserve = true;
+    isDragging = true;
+    const rect = reserveEl.getBoundingClientRect();
+    dragOffset.x = clientX - rect.left;
+    dragOffset.y = clientY - rect.top;
+    dragPos.x = clientX;
+    dragPos.y = clientY;
+  };
+  reserveEl.addEventListener('mousedown', (e) => { e.preventDefault(); startReserveDrag(e.clientX, e.clientY); });
+  reserveEl.addEventListener('touchstart', (e) => { e.preventDefault(); startReserveDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
 
   document.addEventListener('mousemove', onDragMove);
   document.addEventListener('mouseup', onDragEnd);
@@ -620,6 +648,7 @@ function renderReserve() {
 
 function onReserveSwap() {
   if (gameOver || !reserveUnlocked || isDragging) return;
+  if (Date.now() - lastReserveDragEnd < 300) return;
   const firstIdx = currentPieces.findIndex(p => p !== null);
   if (firstIdx === -1) return;
   playTick();
@@ -692,9 +721,55 @@ function onTouchMove(e) {
   updateHover();
 }
 
+function isOverReserve() {
+  if (!reserveUnlocked || !reserveEl) return false;
+  const rect = reserveEl.getBoundingClientRect();
+  return dragPos.x >= rect.left && dragPos.x <= rect.right &&
+         dragPos.y >= rect.top && dragPos.y <= rect.bottom;
+}
+
 function onDragEnd() {
   if (!isDragging) return;
-  tryPlace();
+  if (dragFromReserve && dragPiece) {
+    // Drag aus Reserve: aufs Board platzieren oder zurücklegen
+    if (hoverValid && hoverCells.length > 0) {
+      // Auf dem Board platzieren
+      hoverCells.forEach(({ col, row }) => { grid[row][col] = dragPiece.color; });
+      playClack();
+      const cellCount = hoverCells.length;
+      let basePoints = cellCount;
+      if (timeMultiplierActive) basePoints = Math.round(cellCount * getTimeMultiplier());
+      score += basePoints;
+      totalBlocksPlaced += cellCount;
+      reservePiece = null;
+      clearLines();
+      updateScore(); updateBlockCounter();
+      checkTempoStart(); checkReserveUnlock();
+      renderPreview(); renderReserve();
+      if (totalBlocksPlaced >= MAX_CELLS) { dragFromReserve = false; isDragging = false; dragPiece = null; hoverCells = []; hoverValid = true; drawBoard(); endGameWon(); return; }
+      checkSpawnNeeded();
+      checkGameOver();
+    }
+    // Sonst: zurück in die Reserve (nichts ändern)
+  } else if (isOverReserve() && dragPiece) {
+    // Drop von Preview auf Reserve-Box: Stück tauschen/ablegen
+    playTick();
+    if (reservePiece === null) {
+      reservePiece = { shape: dragPiece.shape, color: dragPiece.color };
+      currentPieces[dragPiece.index] = null;
+      checkSpawnNeeded();
+    } else {
+      const temp = reservePiece;
+      reservePiece = { shape: dragPiece.shape, color: dragPiece.color };
+      currentPieces[dragPiece.index] = temp;
+    }
+    formStartTime = Date.now();
+    renderPreview(); renderReserve(); checkGameOver();
+  } else {
+    tryPlace();
+  }
+  if (dragFromReserve) lastReserveDragEnd = Date.now();
+  dragFromReserve = false;
   isDragging = false; dragPiece = null; hoverCells = []; hoverValid = true;
   drawBoard();
   document.querySelectorAll('.preview-slot').forEach(s => s.classList.remove('dragging'));
