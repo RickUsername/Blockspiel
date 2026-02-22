@@ -11,13 +11,13 @@ const CELLS_FOR_TIMER = 100;
 const CELLS_FOR_RESERVE = 200;
 const MAX_CELLS = 1000;
 const WOOD_TYPES = [
-  { base: '#D4A45A', dark: '#B8873A', light: '#E8C88A', name: 'Ahorn' },
-  { base: '#A0582D', dark: '#7B3F18', light: '#C47A4E', name: 'Kirsche' },
-  { base: '#7A5230', dark: '#5C3A1E', light: '#9E7650', name: 'Nussbaum' },
-  { base: '#C49040', dark: '#A07028', light: '#DEB060', name: 'Eiche' },
-  { base: '#8B4C28', dark: '#6A3418', light: '#B0704A', name: 'Mahagoni' },
-  { base: '#CCAD82', dark: '#B09468', light: '#E8D4B0', name: 'Birke' },
-  { base: '#B07038', dark: '#8A5020', light: '#D09458', name: 'Teak' },
+  { base: '#D4A040', dark: '#A87820', light: '#DDB458', name: 'Ahorn' },
+  { base: '#A04820', dark: '#6E2A0C', light: '#B86038', name: 'Kirsche' },
+  { base: '#7A4820', dark: '#4E2C10', light: '#906038', name: 'Nussbaum' },
+  { base: '#C48530', dark: '#966018', light: '#D49848', name: 'Eiche' },
+  { base: '#8B4018', dark: '#5C2808', light: '#A85830', name: 'Mahagoni' },
+  { base: '#C4A060', dark: '#9E8040', light: '#D4B478', name: 'Birke' },
+  { base: '#B06028', dark: '#7A3C10', light: '#C87840', name: 'Teak' },
 ];
 const COLORS = WOOD_TYPES.map(w => w.base);
 const SHAPES = [
@@ -955,13 +955,20 @@ function drawBlock(context, x, y, size, color, alpha = 1) {
   const bx = x + pad, by = y + pad, bw = size - pad * 2, bh = size - pad * 2;
   const wood = getWoodType(color);
   context.globalAlpha = alpha;
-  context.fillStyle = 'rgba(0,0,0,0.25)';
+  // Shadow
+  context.fillStyle = 'rgba(0,0,0,0.35)';
   roundRect(context, bx - 0.5, by - 0.5, bw + 1, bh + 1, r + 0.5); context.fill();
+  // Main fill — kräftiger Gradient, weniger Aufhellung
   const bg = context.createLinearGradient(bx, by, bx + bw * 0.2, by + bh);
-  bg.addColorStop(0, wood.light); bg.addColorStop(0.3, wood.base);
-  bg.addColorStop(0.65, darkenColor(wood.base, 12)); bg.addColorStop(1, wood.dark);
+  bg.addColorStop(0, wood.light); bg.addColorStop(0.2, wood.base);
+  bg.addColorStop(0.7, wood.base); bg.addColorStop(1, wood.dark);
   context.fillStyle = bg;
   roundRect(context, bx, by, bw, bh, r); context.fill();
+  // Zweite Schicht: Vollflächig base nochmal drüber für Solidität
+  context.globalAlpha = alpha * 0.35;
+  context.fillStyle = wood.base;
+  roundRect(context, bx, by, bw, bh, r); context.fill();
+  context.globalAlpha = alpha;
   context.save();
   roundRect(context, bx, by, bw, bh, r); context.clip();
   const seed = (x * 7 + y * 13) % 100;
@@ -971,27 +978,30 @@ function drawBlock(context, x, y, size, color, alpha = 1) {
       const w = Math.sin((ly + seed) * 0.13 + lx * 0.05) + Math.sin((ly + seed) * 0.07 + lx * 0.02) * 0.6;
       context.lineTo(bx + lx, by + ly + w);
     }
-    context.strokeStyle = (ly % 4 < 2) ? 'rgba(0,0,0,0.08)' : 'rgba(255,240,200,0.04)';
+    context.strokeStyle = (ly % 4 < 2) ? 'rgba(0,0,0,0.1)' : 'rgba(255,240,200,0.05)';
     context.lineWidth = 0.5; context.stroke();
   }
   for (let ly = 2 + (seed % 4); ly < bh; ly += 6 + (seed % 3)) {
-    context.globalAlpha = alpha * 0.045;
+    context.globalAlpha = alpha * 0.06;
     context.fillStyle = wood.dark;
     context.fillRect(bx, by + ly, bw, 1.5 + Math.sin(ly * 0.25));
   }
   context.globalAlpha = alpha; context.restore();
-  context.fillStyle = 'rgba(0,0,0,0.15)';
+  // Kanten-Schatten und Highlights
+  context.fillStyle = 'rgba(0,0,0,0.18)';
   context.fillRect(bx + r, by, bw - r * 2, Math.max(1.5, bh * 0.05));
-  context.fillStyle = 'rgba(0,0,0,0.1)';
+  context.fillStyle = 'rgba(0,0,0,0.12)';
   context.fillRect(bx, by + r, Math.max(1.5, bw * 0.05), bh - r * 2);
-  context.fillStyle = 'rgba(255,230,180,0.1)';
+  context.fillStyle = 'rgba(255,230,180,0.08)';
   context.fillRect(bx + r, by + bh - Math.max(1.5, bh * 0.05), bw - r * 2, Math.max(1.5, bh * 0.05));
-  context.fillStyle = 'rgba(255,230,180,0.06)';
+  context.fillStyle = 'rgba(255,230,180,0.05)';
   context.fillRect(bx + bw - Math.max(1.5, bw * 0.05), by + r, Math.max(1.5, bw * 0.05), bh - r * 2);
-  context.strokeStyle = 'rgba(0,0,0,0.12)'; context.lineWidth = 0.5;
+  // Rahmen kräftiger
+  context.strokeStyle = 'rgba(0,0,0,0.2)'; context.lineWidth = 0.7;
   roundRect(context, bx, by, bw, bh, r); context.stroke();
+  // Dezenter Gloss — weniger stark
   const gl = context.createRadialGradient(bx + bw * 0.35, by + bh * 0.3, 0, bx + bw * 0.35, by + bh * 0.3, bw * 0.55);
-  gl.addColorStop(0, 'rgba(255,248,230,0.12)'); gl.addColorStop(1, 'rgba(255,248,230,0)');
+  gl.addColorStop(0, 'rgba(255,248,230,0.06)'); gl.addColorStop(1, 'rgba(255,248,230,0)');
   context.fillStyle = gl;
   roundRect(context, bx, by, bw, bh, r); context.fill();
   context.globalAlpha = 1;
