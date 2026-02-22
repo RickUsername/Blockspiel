@@ -11,12 +11,12 @@ const CELLS_FOR_TIMER = 100;
 const CELLS_FOR_RESERVE = 200;
 const MAX_CELLS = 1000;
 const WOOD_TYPES = [
-  { base: '#D4A040', dark: '#A87820', light: '#DDB458', name: 'Ahorn' },
+  { base: '#8B6A28', dark: '#5E4518', light: '#A07830', name: 'Ahorn' },
   { base: '#A04820', dark: '#6E2A0C', light: '#B86038', name: 'Kirsche' },
   { base: '#7A4820', dark: '#4E2C10', light: '#906038', name: 'Nussbaum' },
-  { base: '#C48530', dark: '#966018', light: '#D49848', name: 'Eiche' },
+  { base: '#8A6020', dark: '#604010', light: '#9E7030', name: 'Eiche' },
   { base: '#8B4018', dark: '#5C2808', light: '#A85830', name: 'Mahagoni' },
-  { base: '#C4A060', dark: '#9E8040', light: '#D4B478', name: 'Birke' },
+  { base: '#7A6035', dark: '#544020', light: '#8E7045', name: 'Birke' },
   { base: '#B06028', dark: '#7A3C10', light: '#C87840', name: 'Teak' },
 ];
 const COLORS = WOOD_TYPES.map(w => w.base);
