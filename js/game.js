@@ -11,13 +11,13 @@ const CELLS_FOR_TIMER = 100;
 const CELLS_FOR_RESERVE = 200;
 const MAX_CELLS = 1000;
 const WOOD_TYPES = [
-  { base: '#D4A45A', dark: '#B8873A', light: '#E8C88A', name: 'Ahorn' },
-  { base: '#A0582D', dark: '#7B3F18', light: '#C47A4E', name: 'Kirsche' },
-  { base: '#7A5230', dark: '#5C3A1E', light: '#9E7650', name: 'Nussbaum' },
-  { base: '#C49040', dark: '#A07028', light: '#DEB060', name: 'Eiche' },
-  { base: '#8B4C28', dark: '#6A3418', light: '#B0704A', name: 'Mahagoni' },
-  { base: '#CCAD82', dark: '#B09468', light: '#E8D4B0', name: 'Birke' },
-  { base: '#B07038', dark: '#8A5020', light: '#D09458', name: 'Teak' },
+  { base: '#8B6A28', dark: '#5E4518', light: '#A07830', name: 'Ahorn' },
+  { base: '#A04820', dark: '#6E2A0C', light: '#B86038', name: 'Kirsche' },
+  { base: '#7A4820', dark: '#4E2C10', light: '#906038', name: 'Nussbaum' },
+  { base: '#8A6020', dark: '#604010', light: '#9E7030', name: 'Eiche' },
+  { base: '#8B4018', dark: '#5C2808', light: '#A85830', name: 'Mahagoni' },
+  { base: '#7A6035', dark: '#544020', light: '#8E7045', name: 'Birke' },
+  { base: '#B06028', dark: '#7A3C10', light: '#C87840', name: 'Teak' },
 ];
 const COLORS = WOOD_TYPES.map(w => w.base);
 const SHAPES = [
@@ -118,77 +118,90 @@ function initAudio() {
 }
 
 function playTick() {
+  // Weiches Holz-Tok beim Aufnehmen
   if (soundMuted || !audioCtx) return;
   const t = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
+  // Kurzer gedämpfter Klopf-Impuls
+  const len = Math.floor(audioCtx.sampleRate * 0.04);
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.06));
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 2500; lp.Q.value = 0.7;
   const g = audioCtx.createGain();
-  osc.connect(g); g.connect(audioCtx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(900, t);
-  osc.frequency.exponentialRampToValueAtTime(600, t + 0.04);
-  g.gain.setValueAtTime(0.07, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  g.gain.setValueAtTime(0.12, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  src.connect(lp); lp.connect(g); g.connect(audioCtx.destination);
+  src.start(t);
+  // Warmer Holzton
+  const osc = audioCtx.createOscillator();
+  const og = audioCtx.createGain();
+  osc.connect(og); og.connect(audioCtx.destination);
+  osc.type = 'sine'; osc.frequency.value = 420;
+  og.gain.setValueAtTime(0.04, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
   osc.start(t); osc.stop(t + 0.06);
 }
 
 function playClack() {
+  // Sattes Holz-Klonk beim Platzieren
   if (soundMuted || !audioCtx) return;
   const t = audioCtx.currentTime;
-  // Noise burst durch Bandpass = Holz-Klack
-  const len = Math.floor(audioCtx.sampleRate * 0.1);
+  // Tieferer Aufprall-Impuls
+  const len = Math.floor(audioCtx.sampleRate * 0.15);
   const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
   const d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.12));
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.08));
   const src = audioCtx.createBufferSource();
   src.buffer = buf;
   const bp = audioCtx.createBiquadFilter();
-  bp.type = 'bandpass'; bp.frequency.value = 350; bp.Q.value = 1.8;
+  bp.type = 'bandpass'; bp.frequency.value = 280; bp.Q.value = 2.5;
   const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.25, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  g.gain.setValueAtTime(0.2, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
   src.connect(bp); bp.connect(g); g.connect(audioCtx.destination);
   src.start(t);
-  // Holz-Resonanz dazu
-  const osc = audioCtx.createOscillator();
-  const g2 = audioCtx.createGain();
-  osc.connect(g2); g2.connect(audioCtx.destination);
-  osc.type = 'sine'; osc.frequency.value = 180;
-  g2.gain.setValueAtTime(0.06, t);
-  g2.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-  osc.start(t); osc.stop(t + 0.08);
+  // Zwei Resonanz-Töne für Holzkörper
+  [145, 250].forEach((freq, i) => {
+    const o = audioCtx.createOscillator();
+    const og = audioCtx.createGain();
+    o.connect(og); og.connect(audioCtx.destination);
+    o.type = 'sine'; o.frequency.value = freq;
+    const vol = i === 0 ? 0.07 : 0.03;
+    og.gain.setValueAtTime(vol, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    o.start(t); o.stop(t + 0.12);
+  });
 }
 
 function playSwoosh() {
+  // Warme Marimba-Tonfolge beim Linienlöschen
   if (soundMuted || !audioCtx) return;
   const t = audioCtx.currentTime;
-  // Swoosh
-  const osc = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  osc.connect(g); g.connect(audioCtx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1200, t);
-  osc.frequency.exponentialRampToValueAtTime(200, t + 0.25);
-  g.gain.setValueAtTime(0.08, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-  osc.start(t); osc.stop(t + 0.3);
-  // Klingeln
-  const ch = audioCtx.createOscillator();
-  const cg = audioCtx.createGain();
-  ch.connect(cg); cg.connect(audioCtx.destination);
-  ch.type = 'sine'; ch.frequency.value = 1500;
-  cg.gain.setValueAtTime(0, t + 0.08);
-  cg.gain.linearRampToValueAtTime(0.05, t + 0.12);
-  cg.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
-  ch.start(t + 0.08); ch.stop(t + 0.55);
-  // Zweiter Ton
-  const ch2 = audioCtx.createOscillator();
-  const cg2 = audioCtx.createGain();
-  ch2.connect(cg2); cg2.connect(audioCtx.destination);
-  ch2.type = 'sine'; ch2.frequency.value = 2000;
-  cg2.gain.setValueAtTime(0, t + 0.15);
-  cg2.gain.linearRampToValueAtTime(0.03, t + 0.2);
-  cg2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-  ch2.start(t + 0.15); ch2.stop(t + 0.6);
+  const notes = [523, 659, 784]; // C5, E5, G5 — Dur-Akkord aufsteigend
+  notes.forEach((freq, i) => {
+    const delay = i * 0.07;
+    // Marimba-artiger Ton: Sinus + schneller Decay
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t + delay);
+    g.gain.linearRampToValueAtTime(0.1, t + delay + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.35);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t + delay); osc.stop(t + delay + 0.35);
+    // Oberton für Wärme
+    const h = audioCtx.createOscillator();
+    const hg = audioCtx.createGain();
+    h.type = 'sine'; h.frequency.value = freq * 2.98; // ~Terz-Oberton
+    hg.gain.setValueAtTime(0, t + delay);
+    hg.gain.linearRampToValueAtTime(0.02, t + delay + 0.005);
+    hg.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.15);
+    h.connect(hg); hg.connect(audioCtx.destination);
+    h.start(t + delay); h.stop(t + delay + 0.15);
+  });
 }
 
 function toggleMute() {
@@ -951,13 +964,20 @@ function drawBlock(context, x, y, size, color, alpha = 1) {
   const bx = x + pad, by = y + pad, bw = size - pad * 2, bh = size - pad * 2;
   const wood = getWoodType(color);
   context.globalAlpha = alpha;
-  context.fillStyle = 'rgba(0,0,0,0.25)';
+  // Shadow
+  context.fillStyle = 'rgba(0,0,0,0.35)';
   roundRect(context, bx - 0.5, by - 0.5, bw + 1, bh + 1, r + 0.5); context.fill();
+  // Main fill — kräftiger Gradient, weniger Aufhellung
   const bg = context.createLinearGradient(bx, by, bx + bw * 0.2, by + bh);
-  bg.addColorStop(0, wood.light); bg.addColorStop(0.3, wood.base);
-  bg.addColorStop(0.65, darkenColor(wood.base, 12)); bg.addColorStop(1, wood.dark);
+  bg.addColorStop(0, wood.light); bg.addColorStop(0.2, wood.base);
+  bg.addColorStop(0.7, wood.base); bg.addColorStop(1, wood.dark);
   context.fillStyle = bg;
   roundRect(context, bx, by, bw, bh, r); context.fill();
+  // Zweite Schicht: Vollflächig base nochmal drüber für Solidität
+  context.globalAlpha = alpha * 0.35;
+  context.fillStyle = wood.base;
+  roundRect(context, bx, by, bw, bh, r); context.fill();
+  context.globalAlpha = alpha;
   context.save();
   roundRect(context, bx, by, bw, bh, r); context.clip();
   const seed = (x * 7 + y * 13) % 100;
@@ -967,27 +987,30 @@ function drawBlock(context, x, y, size, color, alpha = 1) {
       const w = Math.sin((ly + seed) * 0.13 + lx * 0.05) + Math.sin((ly + seed) * 0.07 + lx * 0.02) * 0.6;
       context.lineTo(bx + lx, by + ly + w);
     }
-    context.strokeStyle = (ly % 4 < 2) ? 'rgba(0,0,0,0.08)' : 'rgba(255,240,200,0.04)';
+    context.strokeStyle = (ly % 4 < 2) ? 'rgba(0,0,0,0.1)' : 'rgba(255,240,200,0.05)';
     context.lineWidth = 0.5; context.stroke();
   }
   for (let ly = 2 + (seed % 4); ly < bh; ly += 6 + (seed % 3)) {
-    context.globalAlpha = alpha * 0.045;
+    context.globalAlpha = alpha * 0.06;
     context.fillStyle = wood.dark;
     context.fillRect(bx, by + ly, bw, 1.5 + Math.sin(ly * 0.25));
   }
   context.globalAlpha = alpha; context.restore();
-  context.fillStyle = 'rgba(0,0,0,0.15)';
+  // Kanten-Schatten und Highlights
+  context.fillStyle = 'rgba(0,0,0,0.18)';
   context.fillRect(bx + r, by, bw - r * 2, Math.max(1.5, bh * 0.05));
-  context.fillStyle = 'rgba(0,0,0,0.1)';
+  context.fillStyle = 'rgba(0,0,0,0.12)';
   context.fillRect(bx, by + r, Math.max(1.5, bw * 0.05), bh - r * 2);
-  context.fillStyle = 'rgba(255,230,180,0.1)';
+  context.fillStyle = 'rgba(255,230,180,0.08)';
   context.fillRect(bx + r, by + bh - Math.max(1.5, bh * 0.05), bw - r * 2, Math.max(1.5, bh * 0.05));
-  context.fillStyle = 'rgba(255,230,180,0.06)';
+  context.fillStyle = 'rgba(255,230,180,0.05)';
   context.fillRect(bx + bw - Math.max(1.5, bw * 0.05), by + r, Math.max(1.5, bw * 0.05), bh - r * 2);
-  context.strokeStyle = 'rgba(0,0,0,0.12)'; context.lineWidth = 0.5;
+  // Rahmen kräftiger
+  context.strokeStyle = 'rgba(0,0,0,0.2)'; context.lineWidth = 0.7;
   roundRect(context, bx, by, bw, bh, r); context.stroke();
+  // Dezenter Gloss — weniger stark
   const gl = context.createRadialGradient(bx + bw * 0.35, by + bh * 0.3, 0, bx + bw * 0.35, by + bh * 0.3, bw * 0.55);
-  gl.addColorStop(0, 'rgba(255,248,230,0.12)'); gl.addColorStop(1, 'rgba(255,248,230,0)');
+  gl.addColorStop(0, 'rgba(255,248,230,0.06)'); gl.addColorStop(1, 'rgba(255,248,230,0)');
   context.fillStyle = gl;
   roundRect(context, bx, by, bw, bh, r); context.fill();
   context.globalAlpha = 1;
