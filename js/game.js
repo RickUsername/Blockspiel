@@ -68,7 +68,7 @@ const SHAPES = [
   { cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]], name: '3x2', size: 3 },
   { cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]], name: '3x3', size: 3 },
 ];
-const SIZE_WEIGHTS = { 1: 1, 2: 3, 3: 1 };
+const SIZE_CHANCES = { 1: 0.07, 3: 0.045 }; // size 2 = Rest (88.5%)
 const TOUCH_DRAG_OFFSET_Y = -120; // ~2cm above finger so shape is visible
 
 // Abschluss-Sprüche
@@ -249,12 +249,13 @@ function toggleMute() {
 // Gaußsche Formauswahl
 // ============================================================
 function pickRandomShape() {
-  const weighted = [];
-  for (const shape of SHAPES) {
-    const w = SIZE_WEIGHTS[shape.size] || 1;
-    for (let i = 0; i < w; i++) weighted.push(shape);
-  }
-  return weighted[Math.floor(Math.random() * weighted.length)];
+  const r = Math.random();
+  let targetSize;
+  if (r < SIZE_CHANCES[1]) targetSize = 1;
+  else if (r < SIZE_CHANCES[1] + SIZE_CHANCES[3]) targetSize = 3;
+  else targetSize = 2;
+  const candidates = SHAPES.filter(s => s.size === targetSize);
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 // ============================================================
