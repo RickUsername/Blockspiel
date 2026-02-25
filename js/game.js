@@ -30,7 +30,7 @@ const SHAPES = [
   { cells: [[0,0],[0,1],[1,1]], name: 'L1', size: 2 },
   { cells: [[0,0],[1,0],[0,1]], name: 'L2', size: 2 },
   { cells: [[0,0],[1,0],[1,1]], name: 'L3', size: 2 },
-  { cells: [[0,0],[1,1],[0,1]], name: 'L4', size: 2 },
+  { cells: [[1,0],[0,1],[1,1]], name: 'L4', size: 2 },
   { cells: [[0,0],[1,0],[2,0],[3,0]], name: '1x4', size: 2 },
   { cells: [[0,0],[0,1],[0,2],[0,3]], name: '4x1', size: 2 },
   { cells: [[0,0],[0,1],[0,2],[1,2]], name: 'bigL1', size: 2 },
@@ -49,11 +49,27 @@ const SHAPES = [
   { cells: [[0,0],[0,1],[1,1],[1,2]], name: 'S2', size: 2 },
   { cells: [[0,0],[1,0],[1,1],[2,1]], name: 'Z1', size: 2 },
   { cells: [[1,0],[0,1],[1,1],[0,2]], name: 'Z2', size: 2 },
+  // Plus/Kreuz
+  { cells: [[1,0],[0,1],[1,1],[2,1],[1,2]], name: 'plus', size: 2 },
+  // U-Formen (4 Rotationen)
+  { cells: [[0,0],[2,0],[0,1],[1,1],[2,1]], name: 'U1', size: 2 },
+  { cells: [[0,0],[1,0],[0,1],[0,2],[1,2]], name: 'U2', size: 2 },
+  { cells: [[0,0],[1,0],[2,0],[0,1],[2,1]], name: 'U3', size: 2 },
+  { cells: [[0,0],[1,0],[1,1],[0,2],[1,2]], name: 'U4', size: 2 },
+  // Große S/Z-Formen (gespiegelte Varianten)
+  { cells: [[1,0],[2,0],[0,1],[1,1],[0,2]], name: 'bigS1', size: 2 },
+  { cells: [[0,0],[1,0],[1,1],[2,1],[2,2]], name: 'bigZ1', size: 2 },
+  { cells: [[0,0],[0,1],[1,1],[1,2],[2,2]], name: 'bigS2', size: 2 },
+  { cells: [[2,0],[1,1],[2,1],[0,2],[1,2]], name: 'bigZ2', size: 2 },
+  // Große Formen
   { cells: [[0,0],[1,0],[2,0],[3,0],[4,0]], name: '1x5', size: 3 },
   { cells: [[0,0],[0,1],[0,2],[0,3],[0,4]], name: '5x1', size: 3 },
+  { cells: [[0,0],[1,0],[0,1],[1,1],[0,2],[1,2]], name: '2x3', size: 3 },
+  { cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]], name: '3x2', size: 3 },
   { cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]], name: '3x3', size: 3 },
 ];
 const SIZE_WEIGHTS = { 1: 1, 2: 3, 3: 1 };
+const TOUCH_DRAG_OFFSET_Y = -120; // ~2cm above finger so shape is visible
 
 // Abschluss-Sprüche
 const QUOTES = [
@@ -98,6 +114,7 @@ let tempoInterval = null;
 let dragPiece = null;
 let dragOffset = { x: 0, y: 0 };
 let dragPos = { x: 0, y: 0 };
+let dragRawPos = { x: 0, y: 0 }; // actual finger position (without touch offset)
 let isDragging = false;
 let dragFromReserve = false;
 let lastReserveDragEnd = 0;
@@ -336,6 +353,8 @@ function buildDOM() {
     const rect = reserveEl.getBoundingClientRect();
     dragOffset.x = clientX - rect.left;
     dragOffset.y = clientY - rect.top;
+    dragRawPos.x = clientX;
+    dragRawPos.y = clientY;
     dragPos.x = clientX;
     dragPos.y = clientY;
   };
@@ -617,6 +636,8 @@ function renderPreview() {
       const rect = slot.getBoundingClientRect();
       dragOffset.x = clientX - rect.left;
       dragOffset.y = clientY - rect.top;
+      dragRawPos.x = clientX;
+      dragRawPos.y = clientY;
       dragPos.x = clientX;
       dragPos.y = clientY;
       slot.classList.add('dragging');
@@ -640,7 +661,7 @@ function renderReserve() {
   const { shape, color } = reservePiece;
   let maxC = 0, maxR = 0;
   shape.cells.forEach(([c, r]) => { if (c > maxC) maxC = c; if (r > maxR) maxR = r; });
-  const rcs = Math.min(20, Math.floor(50 / Math.max(maxC + 1, maxR + 1)));
+  const rcs = Math.min(24, Math.floor(64 / Math.max(maxC + 1, maxR + 1)));
   canvas.width = (maxC + 1) * rcs; canvas.height = (maxR + 1) * rcs;
   const rx = canvas.getContext('2d'); rx.clearRect(0, 0, canvas.width, canvas.height);
   shape.cells.forEach(([c, r]) => { drawBlock(rx, c * rcs, r * rcs, rcs, color); });
@@ -661,7 +682,6 @@ function onReserveSwap() {
     reservePiece = currentPieces[firstIdx];
     currentPieces[firstIdx] = temp;
   }
-  formStartTime = Date.now();
   renderPreview(); renderReserve(); checkGameOver();
 }
 
@@ -709,6 +729,7 @@ function updateBlockCounter() {
 // ============================================================
 function onDragMove(e) {
   if (!isDragging) return;
+  dragRawPos.x = e.clientX; dragRawPos.y = e.clientY;
   dragPos.x = e.clientX; dragPos.y = e.clientY;
   updateHover();
 }
@@ -717,15 +738,17 @@ function onTouchMove(e) {
   if (!isDragging) return;
   e.preventDefault();
   const t = e.touches[0];
-  dragPos.x = t.clientX; dragPos.y = t.clientY - 60;
+  dragRawPos.x = t.clientX; dragRawPos.y = t.clientY;
+  dragPos.x = t.clientX; dragPos.y = t.clientY + TOUCH_DRAG_OFFSET_Y;
   updateHover();
 }
 
 function isOverReserve() {
   if (!reserveUnlocked || !reserveEl) return false;
   const rect = reserveEl.getBoundingClientRect();
-  return dragPos.x >= rect.left && dragPos.x <= rect.right &&
-         dragPos.y >= rect.top && dragPos.y <= rect.bottom;
+  const pad = 28; // generous hit area around the reserve box
+  return dragRawPos.x >= rect.left - pad && dragRawPos.x <= rect.right + pad &&
+         dragRawPos.y >= rect.top - pad && dragRawPos.y <= rect.bottom + pad;
 }
 
 function onDragEnd() {
@@ -763,7 +786,6 @@ function onDragEnd() {
       reservePiece = { shape: dragPiece.shape, color: dragPiece.color };
       currentPieces[dragPiece.index] = temp;
     }
-    formStartTime = Date.now();
     renderPreview(); renderReserve(); checkGameOver();
   } else {
     tryPlace();
@@ -771,6 +793,7 @@ function onDragEnd() {
   if (dragFromReserve) lastReserveDragEnd = Date.now();
   dragFromReserve = false;
   isDragging = false; dragPiece = null; hoverCells = []; hoverValid = true;
+  reserveEl.classList.remove('drag-highlight');
   drawBoard();
   document.querySelectorAll('.preview-slot').forEach(s => s.classList.remove('dragging'));
 }
@@ -782,14 +805,26 @@ function updateHover() {
   const rect = canvasBoard.getBoundingClientRect();
   const relX = dragPos.x - rect.left;
   const relY = dragPos.y - rect.top;
-  const gridCol = Math.round((relX - cellSize / 2) / cellSize);
-  const gridRow = Math.round((relY - cellSize / 2) / cellSize);
+  // Center-based snapping: shape center aligns with cursor position
+  const cells = dragPiece.shape.cells;
+  let sumC = 0, sumR = 0;
+  for (const [c, r] of cells) { sumC += c; sumR += r; }
+  const centerC = sumC / cells.length;
+  const centerR = sumR / cells.length;
+  const gridCol = Math.round(relX / cellSize - 0.5 - centerC);
+  const gridRow = Math.round(relY / cellSize - 0.5 - centerR);
   hoverCells = []; hoverValid = true;
-  for (const [c, r] of dragPiece.shape.cells) {
+  for (const [c, r] of cells) {
     const col = gridCol + c, row = gridRow + r;
     hoverCells.push({ col, row });
     if (col < 0 || col >= GRID_SIZE || row < 0 || row >= GRID_SIZE) hoverValid = false;
     else if (grid[row][col] !== null) hoverValid = false;
+  }
+  // Highlight reserve box when dragging over it from preview
+  if (dragPiece && !dragFromReserve && isOverReserve()) {
+    reserveEl.classList.add('drag-highlight');
+  } else {
+    reserveEl.classList.remove('drag-highlight');
   }
   drawBoard();
 }
