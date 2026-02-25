@@ -270,7 +270,7 @@ function init() {
 }
 
 function quickSize() {
-  const estUsed = 220;
+  const estUsed = 290;
   const availH = window.innerHeight - estUsed;
   const availW = Math.min(window.innerWidth, 580) - 20;
   const maxPx = Math.max(100, Math.min(availH, availW, 560));
@@ -539,7 +539,7 @@ function resizeBoard() {
     ? previewRow.getBoundingClientRect().height : 100;
   const counterH = (counter && counter.getBoundingClientRect().height > 5)
     ? counter.getBoundingClientRect().height : 20;
-  const fixedChrome = 14 + 16 + 16;
+  const fixedChrome = 14 + 16 + 16 + 70;
   const availH = window.innerHeight - headerH - previewH - counterH - fixedChrome;
   const availW = Math.min(window.innerWidth, 580) - 16;
   const maxBoardPx = Math.max(100, Math.min(availH, availW, 560));
