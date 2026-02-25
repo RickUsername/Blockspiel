@@ -117,6 +117,7 @@ let dragPos = { x: 0, y: 0 };
 let dragRawPos = { x: 0, y: 0 }; // actual finger position (without touch offset)
 let isDragging = false;
 let dragFromReserve = false;
+let dragWasOnBoard = false; // true once piece hovered over the board grid
 let lastReserveDragEnd = 0;
 let hoverCells = [];
 let hoverValid = true;
@@ -774,7 +775,7 @@ function onDragEnd() {
       checkGameOver();
     }
     // Sonst: zurück in die Reserve (nichts ändern)
-  } else if (isOverReserve() && dragPiece) {
+  } else if (!dragWasOnBoard && isOverReserve() && dragPiece) {
     // Drop von Preview auf Reserve-Box: Stück tauschen/ablegen
     playTick();
     if (reservePiece === null) {
@@ -792,7 +793,7 @@ function onDragEnd() {
   }
   if (dragFromReserve) lastReserveDragEnd = Date.now();
   dragFromReserve = false;
-  isDragging = false; dragPiece = null; hoverCells = []; hoverValid = true;
+  isDragging = false; dragPiece = null; hoverCells = []; hoverValid = true; dragWasOnBoard = false;
   reserveEl.classList.remove('drag-highlight');
   drawBoard();
   document.querySelectorAll('.preview-slot').forEach(s => s.classList.remove('dragging'));
@@ -814,14 +815,19 @@ function updateHover() {
   const gridCol = Math.round(relX / cellSize - 0.5 - centerC);
   const gridRow = Math.round(relY / cellSize - 0.5 - centerR);
   hoverCells = []; hoverValid = true;
+  let anyCellOnBoard = false;
   for (const [c, r] of cells) {
     const col = gridCol + c, row = gridRow + r;
     hoverCells.push({ col, row });
     if (col < 0 || col >= GRID_SIZE || row < 0 || row >= GRID_SIZE) hoverValid = false;
-    else if (grid[row][col] !== null) hoverValid = false;
+    else {
+      anyCellOnBoard = true;
+      if (grid[row][col] !== null) hoverValid = false;
+    }
   }
-  // Highlight reserve box when dragging over it from preview
-  if (dragPiece && !dragFromReserve && isOverReserve()) {
+  if (anyCellOnBoard) dragWasOnBoard = true;
+  // Highlight reserve box when dragging over it from preview (only if not yet on board)
+  if (dragPiece && !dragFromReserve && !dragWasOnBoard && isOverReserve()) {
     reserveEl.classList.add('drag-highlight');
   } else {
     reserveEl.classList.remove('drag-highlight');
