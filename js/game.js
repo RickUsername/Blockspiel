@@ -135,6 +135,12 @@ let fwParticles = [];
 let fwAnimId = null;
 let fwSpawnTimer = null;
 
+// Performance: Sprite & Background Caches
+let blockSpriteCache = new Map();
+let boardBgCache = null;
+let boardBgCacheSize = 0;
+let drawPending = false;
+
 // ============================================================
 // Sound-System (Web Audio API)
 // ============================================================
@@ -549,7 +555,7 @@ function resizeBoard() {
   canvasBoard.height = boardPx;
   canvasBoard.style.width = boardPx + 'px';
   canvasBoard.style.height = boardPx + 'px';
-  woodCache = null;
+  invalidateCaches();
   drawBoard();
   renderPreview();
   renderReserve();
@@ -829,7 +835,7 @@ function updateHover() {
   } else {
     reserveEl.classList.remove('drag-highlight');
   }
-  drawBoard();
+  scheduleDrawBoard();
 }
 
 function tryPlace() {
@@ -991,6 +997,12 @@ function stopFireworks() {
 let woodCache = null;
 let woodCacheSize = 0;
 
+function invalidateCaches() {
+  blockSpriteCache.clear();
+  boardBgCache = null;
+  woodCache = null;
+}
+
 function generateWoodTexture(size) {
   if (woodCache && woodCacheSize === size) return woodCache;
   woodCacheSize = size;
@@ -1031,24 +1043,56 @@ function generateWoodTexture(size) {
   return oc;
 }
 
-function drawBoard() {
-  const size = cellSize * GRID_SIZE, cs = cellSize;
-  ctx.drawImage(generateWoodTexture(size), 0, 0);
+function generateBoardBg(size, cs) {
+  if (boardBgCache && boardBgCacheSize === size) return boardBgCache;
+  boardBgCacheSize = size;
+  const oc = document.createElement('canvas');
+  oc.width = size; oc.height = size;
+  const ox = oc.getContext('2d');
+  ox.drawImage(generateWoodTexture(size), 0, 0);
   for (let i = 0; i <= GRID_SIZE; i++) {
     const p = i * cs;
-    ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(p - 0.5, 0); ctx.lineTo(p - 0.5, size); ctx.stroke();
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 0.6;
-    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, size); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,230,180,0.09)'; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(p + 0.8, 0); ctx.lineTo(p + 0.8, size); ctx.stroke();
-    ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(0, p - 0.5); ctx.lineTo(size, p - 0.5); ctx.stroke();
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 0.6;
-    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(size, p); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,230,180,0.09)'; ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(0, p + 0.8); ctx.lineTo(size, p + 0.8); ctx.stroke();
+    ox.strokeStyle = 'rgba(0,0,0,0.22)'; ox.lineWidth = 1.2;
+    ox.beginPath(); ox.moveTo(p - 0.5, 0); ox.lineTo(p - 0.5, size); ox.stroke();
+    ox.strokeStyle = 'rgba(0,0,0,0.1)'; ox.lineWidth = 0.6;
+    ox.beginPath(); ox.moveTo(p, 0); ox.lineTo(p, size); ox.stroke();
+    ox.strokeStyle = 'rgba(255,230,180,0.09)'; ox.lineWidth = 0.8;
+    ox.beginPath(); ox.moveTo(p + 0.8, 0); ox.lineTo(p + 0.8, size); ox.stroke();
+    ox.strokeStyle = 'rgba(0,0,0,0.22)'; ox.lineWidth = 1.2;
+    ox.beginPath(); ox.moveTo(0, p - 0.5); ox.lineTo(size, p - 0.5); ox.stroke();
+    ox.strokeStyle = 'rgba(0,0,0,0.1)'; ox.lineWidth = 0.6;
+    ox.beginPath(); ox.moveTo(0, p); ox.lineTo(size, p); ox.stroke();
+    ox.strokeStyle = 'rgba(255,230,180,0.09)'; ox.lineWidth = 0.8;
+    ox.beginPath(); ox.moveTo(0, p + 0.8); ox.lineTo(size, p + 0.8); ox.stroke();
   }
+  boardBgCache = oc;
+  return oc;
+}
+
+function getBlockSprite(color, size) {
+  const key = color + '_' + size;
+  if (blockSpriteCache.has(key)) return blockSpriteCache.get(key);
+  const oc = document.createElement('canvas');
+  oc.width = size; oc.height = size;
+  const octx = oc.getContext('2d');
+  renderBlockFull(octx, 0, 0, size, color);
+  blockSpriteCache.set(key, oc);
+  return oc;
+}
+
+function scheduleDrawBoard() {
+  if (!drawPending) {
+    drawPending = true;
+    requestAnimationFrame(() => {
+      drawPending = false;
+      drawBoard();
+    });
+  }
+}
+
+function drawBoard() {
+  const size = cellSize * GRID_SIZE, cs = cellSize;
+  ctx.drawImage(generateBoardBg(size, cs), 0, 0);
   for (let r = 0; r < GRID_SIZE; r++) {
     if (!grid[r]) continue;
     for (let c = 0; c < GRID_SIZE; c++) if (grid[r][c]) drawBlock(ctx, c * cs, r * cs, cs, grid[r][c]);
@@ -1073,24 +1117,30 @@ function getWoodType(color) {
 }
 
 function drawBlock(context, x, y, size, color, alpha = 1) {
+  const sprite = getBlockSprite(color, size);
+  context.globalAlpha = alpha;
+  context.drawImage(sprite, x, y);
+  context.globalAlpha = 1;
+}
+
+function renderBlockFull(context, x, y, size, color) {
   const pad = 1.5, r = Math.min(3.5, size * 0.1);
   const bx = x + pad, by = y + pad, bw = size - pad * 2, bh = size - pad * 2;
   const wood = getWoodType(color);
-  context.globalAlpha = alpha;
   // Shadow
   context.fillStyle = 'rgba(0,0,0,0.35)';
   roundRect(context, bx - 0.5, by - 0.5, bw + 1, bh + 1, r + 0.5); context.fill();
-  // Main fill — kräftiger Gradient, weniger Aufhellung
+  // Main fill
   const bg = context.createLinearGradient(bx, by, bx + bw * 0.2, by + bh);
   bg.addColorStop(0, wood.light); bg.addColorStop(0.2, wood.base);
   bg.addColorStop(0.7, wood.base); bg.addColorStop(1, wood.dark);
   context.fillStyle = bg;
   roundRect(context, bx, by, bw, bh, r); context.fill();
-  // Zweite Schicht: Vollflächig base nochmal drüber für Solidität
-  context.globalAlpha = alpha * 0.35;
+  // Zweite Schicht
+  context.globalAlpha = 0.35;
   context.fillStyle = wood.base;
   roundRect(context, bx, by, bw, bh, r); context.fill();
-  context.globalAlpha = alpha;
+  context.globalAlpha = 1;
   context.save();
   roundRect(context, bx, by, bw, bh, r); context.clip();
   const seed = (x * 7 + y * 13) % 100;
@@ -1104,11 +1154,11 @@ function drawBlock(context, x, y, size, color, alpha = 1) {
     context.lineWidth = 0.5; context.stroke();
   }
   for (let ly = 2 + (seed % 4); ly < bh; ly += 6 + (seed % 3)) {
-    context.globalAlpha = alpha * 0.06;
+    context.globalAlpha = 0.06;
     context.fillStyle = wood.dark;
     context.fillRect(bx, by + ly, bw, 1.5 + Math.sin(ly * 0.25));
   }
-  context.globalAlpha = alpha; context.restore();
+  context.globalAlpha = 1; context.restore();
   // Kanten-Schatten und Highlights
   context.fillStyle = 'rgba(0,0,0,0.18)';
   context.fillRect(bx + r, by, bw - r * 2, Math.max(1.5, bh * 0.05));
@@ -1118,10 +1168,10 @@ function drawBlock(context, x, y, size, color, alpha = 1) {
   context.fillRect(bx + r, by + bh - Math.max(1.5, bh * 0.05), bw - r * 2, Math.max(1.5, bh * 0.05));
   context.fillStyle = 'rgba(255,230,180,0.05)';
   context.fillRect(bx + bw - Math.max(1.5, bw * 0.05), by + r, Math.max(1.5, bw * 0.05), bh - r * 2);
-  // Rahmen kräftiger
+  // Rahmen
   context.strokeStyle = 'rgba(0,0,0,0.2)'; context.lineWidth = 0.7;
   roundRect(context, bx, by, bw, bh, r); context.stroke();
-  // Dezenter Gloss — weniger stark
+  // Gloss
   const gl = context.createRadialGradient(bx + bw * 0.35, by + bh * 0.3, 0, bx + bw * 0.35, by + bh * 0.3, bw * 0.55);
   gl.addColorStop(0, 'rgba(255,248,230,0.06)'); gl.addColorStop(1, 'rgba(255,248,230,0)');
   context.fillStyle = gl;
