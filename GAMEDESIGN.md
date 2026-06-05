@@ -211,3 +211,47 @@ Reihenfolge so gewählt, dass jede Schwierigkeit maximal unterscheidbare Farben 
 - Reines HTML/CSS/JS, im PWA-Cache (service-worker `gamehub-v3`).
 - Leichte Animationen (nur transform/opacity), kein blur -> läuft auf schwacher Hardware.
 - WebAudio-Sounds (Tausch/Treffer/Sieg), Stummschalter (`fruchtMuted`).
+
+---
+
+# Belagerte Burg (Beleaguered Castle) — `burg.html`
+
+## Überblick
+Offene Patience: alle Karten liegen aufgedeckt. Die 4 Asse liegen von Beginn an
+in der Mitte (Fundamente) und werden farbweise bis zum König hochgebaut.
+
+## Tableau
+- 4 **Fundamente** oben in der Mitte (je ein Ass vorgelegt).
+- **8 Reihen ("Flügel")** mit je 6 offenen Karten (4×12 = 48 Karten passen exakt,
+  da die 4 Asse schon liegen).
+- Reihen liegen waagrecht; spielbar ist die jeweils äußere (oberste) Karte.
+  Karten rücken bei langen Reihen automatisch enger zusammen (passt sich an die
+  Bildschirmbreite an), die oberste Karte bleibt immer voll sichtbar.
+
+## Regeln (bewusst großzügig für Senioren)
+- **Fundament:** aufsteigend A→K, **gleiche Farbe/Symbol**.
+- **Reihen stapeln:** absteigend um genau 1, **Farbe egal** (rot auf rot, schwarz
+  auf rot, … — ausdrücklich gewünscht).
+- **Ganze Folgen verschiebbar:** tippt man eine Karte an, wandert sie samt der
+  lückenlos absteigenden Folge darunter mit.
+- **Leere Reihe** nimmt jede beliebige Karte (bzw. Folge).
+- Kein Nachziehstapel, alles offen.
+
+## Steuerung (nur Tippen)
+- Karte antippen → bestes Ziel automatisch: einzelne Spitze zuerst aufs Fundament,
+  sonst auf eine passende Reihe (belegt bevorzugt, sonst leer).
+- Fundament-Spitze antippen → zurück in eine passende Reihe (z. B. zum Umsortieren).
+
+## Senioren-Hilfen (nie festsitzen)
+- **Zurück** (beliebig oft), **Hinweis** (zeigt einen sinnvollen Zug),
+  **Ablegen** (legt automatisch alle möglichen Karten aufs Fundament), **Neu**.
+- Kein Zeitdruck, kein Verlieren. Sitzt man fest: Zurück oder Neu.
+- Bestzeit in localStorage (`burgBest`), Stummschalter (`burgMuted`).
+- Hinweis: Beleaguered Castle ist nicht jede Mischung lösbar; durch Farb-egal-Stapeln,
+  Folgen-Züge, unbegrenztes Zurück und „Neu" bleibt es aber stets handhabbar.
+
+## Technik
+- Reines HTML/CSS/JS, im PWA-Cache (service-worker `gamehub-v6`).
+- Leichte Animationen (nur transform/opacity), kein blur.
+- 8 Reihen symmetrisch; Kartenmaße aus Höhe (9 Reihen) berechnet, Reihenversatz
+  passt sich der Breite an.
