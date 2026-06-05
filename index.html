@@ -299,6 +299,13 @@
     <script>
         // Service Worker Registrierung
         if ('serviceWorker' in navigator) {
+            const hadController = !!navigator.serviceWorker.controller;
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                if (hadController) window.location.reload();
+            });
             navigator.serviceWorker.register('service-worker.js').then(reg => {
                 reg.update();
             });
