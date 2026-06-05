@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2e5c1e">
+    <title>Minigolf</title>
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-192.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.svg">
+    <link rel="stylesheet" href="css/minigolf.css">
+</head>
+<body>
+    <header class="game-header">
+        <a href="index.html" class="back-btn" aria-label="Zurück zum Hauptmenü">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </a>
+        <h1>Minigolf <span id="current-player-display" style="font-size: 1rem; color: #a3c49a; display: block; margin-top: 0.2rem;"></span></h1>
+        <div class="stats-area">
+            <button id="invert-aim-btn" class="reset-btn" title="Richtung umkehren" style="font-size: 1.1rem;">🔄</button>
+            <button id="reset-ball-btn" class="reset-btn" title="Ball zurücksetzen">⟲</button>
+            <div class="stat-box hidden-mobile">
+                <span class="stat-label">Level</span>
+                <span id="level-display">1 / 10</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Schläge</span>
+                <span id="strokes-display">0 / 10</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="setup-screen" class="overlay-screen">
+        <div class="modal-box" style="width: 400px; max-width: 95%; position: relative;">
+            <a href="index.html" title="Zurück zum Game Hub" style="position: absolute; top: 1.2rem; left: 1.2rem; color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.3); transition: all 0.2s;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </a>
+            <h2>Minigolf Menu</h2>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.5rem; text-align: left;">Spielmodus</label>
+                <div class="difficulty-options" style="flex-direction: column; gap: 0.4rem;">
+                    <button class="diff-btn mode-btn" data-mode="training">Training (Einzelnes Level)</button>
+                    <button class="diff-btn mode-btn active" data-mode="tournament1p">Turnier (1 Spieler)</button>
+                    <button class="diff-btn mode-btn" data-mode="tournament2p">Turnier (2 Spieler)</button>
+                </div>
+            </div>
+
+            <div id="level-select-container" class="form-group" style="margin-top: 1rem; text-align: left; display: none;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.5rem;">Level wählen</label>
+                <select id="level-select" style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 1rem;">
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem; text-align: left;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.5rem;">Schwierigkeitsgrad</label>
+                <div class="difficulty-options" style="flex-direction: row; justify-content: space-between;">
+                    <button class="diff-btn diff-sel-btn" data-diff="easy" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">Leicht</button>
+                    <button class="diff-btn diff-sel-btn active" data-diff="normal" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">Normal</button>
+                    <button class="diff-btn diff-sel-btn" data-diff="hard" style="flex: 1; padding: 0.5rem; font-size: 0.9rem;">Schwer</button>
+                </div>
+            </div>
+
+            <div id="tournament-select-container" class="form-group" style="margin-top: 1rem; text-align: left;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.5rem;">Turnier wählen</label>
+                <select id="custom-tournament-select" style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 1rem;">
+                    <option value="" selected>Standard (10 Level)</option>
+                </select>
+                <button id="open-tournament-builder-btn" class="diff-btn" style="width: 100%; margin-top: 0.5rem; font-size: 0.85rem;">➕ Eigenes Turnier erstellen</button>
+            </div>
+
+            <div id="highscore-display" style="margin-top: 1rem; margin-bottom: 1rem; color: #D4A040; font-size: 0.9rem; font-weight: bold; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 6px;">
+                Turnier Rekord (Normal): -
+            </div>
+
+            <button id="start-game-btn" class="primary-btn">Los geht's!</button>
+            <button id="open-editor-btn" class="diff-btn" style="width: 100%; margin-top: 1rem;">🔨 Level Editor</button>
+            
+            <details style="margin-top: 1rem; width: 100%;">
+                <summary style="color: #a3c49a; font-weight: bold; cursor: pointer; font-size: 0.9rem;">📁 Eigene Level verwalten</summary>
+                <div id="custom-level-list" style="margin-top: 0.5rem;"></div>
+            </details>
+        </div>
+    </div>
+
+    <!-- Custom Tournament Builder Modal -->
+    <div id="tournament-builder-screen" class="overlay-screen hidden" style="z-index: 200;">
+        <div class="modal-box" style="width: 440px; max-width: 95%;">
+            <h2 style="font-size: 1.3rem;">Eigenes Turnier</h2>
+            <div class="form-group" style="margin-top: 0.8rem; text-align: left;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.85rem;">Turniername</label>
+                <input id="tournament-builder-name" type="text" placeholder="z.B. Mein Turnier" style="width: 100%; padding: 0.6rem; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 0.9rem;">
+            </div>
+            <div class="form-group" style="margin-top: 0.8rem; text-align: left;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.85rem;">Level hinzufügen</label>
+                <div style="display: flex; gap: 0.4rem;">
+                    <select id="tournament-builder-level-select" style="flex: 1; padding: 0.5rem; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 0.85rem;"></select>
+                    <button id="tournament-builder-add-btn" class="diff-btn" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">+</button>
+                </div>
+            </div>
+            <div style="margin-top: 0.5rem; text-align: left;">
+                <label style="color: #a3c49a; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.85rem;">Reihenfolge</label>
+                <div id="tournament-builder-list" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 0.4rem;"></div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button id="tournament-builder-save-btn" class="primary-btn" style="flex: 1;">💾 Speichern</button>
+                <button id="tournament-builder-cancel-btn" class="diff-btn" style="flex: 1;">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Editor Overlay -->
+    <div id="editor-screen" class="overlay-screen hidden" style="z-index: 100; justify-content: flex-start; padding: 1rem; flex-direction: column; pointer-events: none; background: transparent;">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; pointer-events: auto;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <select id="editor-load-select" style="padding: 0.4rem; background: #333; color: #a3c49a; border: 1px solid #555; border-radius: 4px; width: 120px;" title="Bestehendes Level laden">
+                    <option value="" disabled selected>Laden...</option>
+                </select>
+                <input type="text" id="editor-level-name" placeholder="Name (z.B. Level 1)" style="padding: 0.4rem; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; width: 140px;">
+                <button id="editor-save-btn" class="diff-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Lokal Speichern</button>
+                <button id="editor-export-btn" class="diff-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Code Kopieren</button>
+                <button id="editor-test-btn" class="diff-btn active" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: #D4A040; color:#000;">Testen</button>
+            </div>
+            <div>
+                <button id="editor-close-btn" class="diff-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Schließen</button>
+            </div>
+        </div>
+
+        <div class="editor-main-area" style="display: flex; gap: 1rem; width: 100%; flex: 1; pointer-events: none;">
+            <!-- Toolbox -->
+            <div class="editor-toolbox" style="background: rgba(0,0,0,0.8); padding: 1rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.8rem; overflow-y: auto; pointer-events: auto;">
+                <h3 style="color: #a3c49a; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-top: 0;">Werkzeuge</h3>
+                
+                <div class="editor-tools-grid">
+                    <button class="editor-tool diff-btn active" data-tool="start">⛳ Start</button>
+                    <button class="editor-tool diff-btn" data-tool="hole">⚫ Loch</button>
+                    <button class="editor-tool diff-btn" data-tool="pan" style="background: rgba(100, 150, 100, 0.4); border-color: rgba(120, 180, 120, 0.8);">👁️ Kamera</button>
+                    <button class="editor-tool diff-btn" data-tool="move" style="background: rgba(100, 100, 100, 0.4); border-color: rgba(150, 150, 150, 0.8);">🖐️ Bewegen</button>
+                    <button class="editor-tool diff-btn" data-tool="wall" style="background: rgba(107, 74, 44, 0.4); border-color: rgba(107, 74, 44, 0.8);">🧱 Wand</button>
+                    <button class="editor-tool diff-btn" data-tool="sand" style="background: rgba(235, 195, 110, 0.4); border-color: rgba(235, 195, 110, 0.8);">🏖️ Sand</button>
+                    <button class="editor-tool diff-btn" data-tool="water" style="background: rgba(80, 150, 220, 0.4); border-color: rgba(20, 90, 160, 0.8);">💧 Wasser</button>
+                    <button class="editor-tool diff-btn" data-tool="erase" style="background: rgba(200, 50, 50, 0.4);">🗑️ Entfernen</button>
+                </div>
+                
+                <button id="editor-clear-btn" class="diff-btn" style="margin-top: 1rem;">🧨 Alles leeren</button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Player Turn Overlay -->
+    <div id="player-turn-screen" class="overlay-screen hidden" style="z-index: 60;">
+        <div class="modal-box">
+            <h2>Gerät weitergeben!</h2>
+            <p style="font-size: 1.2rem; margin-top: 1rem; color: #fff;"><span id="next-player-name" style="color: #D4A040; font-weight: bold;">Spieler 2</span> ist am Zug.</p>
+            <p>Level <span id="next-player-level">1</span></p>
+            <button id="ready-btn" class="primary-btn" style="margin-top: 1rem;">Ich bin bereit</button>
+        </div>
+    </div>
+
+    <div id="level-over-screen" class="overlay-screen hidden">
+        <div class="modal-box">
+            <h2 id="level-title">Eingelocht!</h2>
+            <p>Schläge: <span id="level-strokes-result" style="font-weight: bold; color: #fff;">0</span></p>
+            <button id="next-level-btn" class="primary-btn">Weiter</button>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="overlay-screen hidden">
+        <div class="modal-box">
+            <h2>Turnier beendet!</h2>
+            <p>Gesamtschläge: <span id="total-strokes-result">0</span></p>
+            <p>Modus: <span id="final-mode-result">Normal</span></p>
+            <button id="restart-game-btn" class="primary-btn">Nochmal spielen</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script src="js/minigolf.js"></script>
+</body>
+</html>

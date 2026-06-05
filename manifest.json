@@ -1,7 +1,7 @@
 {
-    "name": "Blockspiel",
-    "short_name": "Blockspiel",
-    "description": "Werbefreies Block-Puzzle im Holzdesign",
+    "name": "Game Hub",
+    "short_name": "Game Hub",
+    "description": "Eine Sammlung von Browser-Spielen wie Blockspiel und Minigolf",
     "start_url": ".",
     "display": "standalone",
     "orientation": "portrait",

@@ -1,0 +1,307 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden; /* Prevent scrolling during gameplay */
+    font-family: 'Inter', sans-serif;
+    background-color: #2e5c1e;
+    color: #F5E6D0;
+    touch-action: none; /* Disable default touch actions to allow custom drag/zoom */
+    -webkit-user-select: none;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header UI */
+.game-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(180deg, rgba(30,50,20,0.8) 0%, rgba(20,40,10,0.9) 100%);
+    border-bottom: 2px solid #5DAA5D;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+
+.game-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: #F8E6C0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    flex-grow: 1;
+    text-align: center;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: #D4A040;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(120,85,45,0.5);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: transform 0.15s, background 0.15s;
+}
+
+.back-btn:hover {
+    background: rgba(0,0,0,0.6);
+    transform: scale(1.05);
+}
+
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.stats-area {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.reset-btn {
+    background: rgba(255,100,100,0.2);
+    border: 1px solid rgba(255,100,100,0.4);
+    color: #ffd6d6;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 0 0.5rem;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+    line-height: 1;
+}
+
+.reset-btn:hover {
+    background: rgba(255,100,100,0.4);
+    transform: scale(1.05);
+}
+
+.reset-btn:active {
+    transform: scale(0.95);
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    min-width: 60px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.stat-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    font-weight: 700;
+}
+
+.stat-box span:last-child {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #D4A040;
+}
+
+/* Game Canvas Container */
+.game-container {
+    flex-grow: 1;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #1b3811; /* Dark underlying dirt */
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Overlays */
+.overlay-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 20, 5, 0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fadeIn 0.3s ease;
+}
+
+#editor-screen.overlay-screen {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.overlay-screen.hidden {
+    display: none;
+}
+
+.modal-box {
+    background: linear-gradient(160deg, #3A5228, #243A18);
+    border: 2px solid #5DAA5D;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    max-width: 90%;
+    width: 350px;
+    max-height: 95vh;
+    overflow-y: auto;
+}
+
+.modal-box h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: #F8E6C0;
+}
+
+.modal-box p {
+    color: #a3c49a;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.difficulty-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.diff-btn {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.diff-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.diff-btn.active {
+    background: #D4A040;
+    color: #000;
+    border-color: #D4A040;
+}
+
+.diff-desc {
+    font-size: 0.8rem;
+    font-weight: normal;
+    opacity: 0.8;
+}
+
+@media (max-width: 600px) {
+    .modal-box {
+        padding: 1.5rem;
+    }
+    
+    .diff-btn {
+        padding: 0.6rem 1rem;
+    }
+    
+    .hidden-mobile {
+        display: none !important;
+    }
+    
+    .editor-main-area {
+        flex-direction: column-reverse !important;
+    }
+    .editor-toolbox {
+        width: 100% !important;
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        max-height: 200px;
+        align-items: center;
+    }
+    .editor-toolbox h3 {
+        display: none;
+    }
+    .editor-tools-grid {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    #editor-clear-btn {
+        margin-top: 0 !important;
+    }
+}
+
+/* Editor Grid styling */
+.editor-tools-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+}
+.editor-tools-grid .editor-tool {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Base Editor Area */
+.editor-main-area {
+    flex-direction: row;
+}
+.editor-toolbox {
+    width: 200px;
+    max-height: calc(100vh - 120px);
+}
+
+.primary-btn {
+    background: linear-gradient(180deg, #D4A040, #A07830);
+    color: #1b2614;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    width: 100%;
+}
+
+.primary-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

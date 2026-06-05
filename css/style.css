@@ -133,6 +133,37 @@ body::after {
   letter-spacing: 1.5px;
 }
 
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #D4A040;
+  background: rgba(40,25,12,0.4);
+  border: 1px solid rgba(120,85,45,0.3);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.back-btn:hover {
+  transform: scale(1.05);
+  background: rgba(60,40,20,0.6);
+  color: #F8E6C0;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.4), 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.back-btn:active {
+  transform: scale(0.95);
+}
+
+.back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 #score-area {
   display: flex;
   gap: 0.4rem;

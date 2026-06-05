@@ -107,3 +107,63 @@ Block-Puzzle auf einem 10x10 Raster in Holzoptik. Werbefreies, seniorenfreundlic
 - PWA mit Service Worker (offline-fähig, installierbar)
 - localStorage für Highscores und Spielernamen
 - Responsive: Handy (portrait), Tablet, Desktop
+
+---
+---
+
+# Paare finden (Memory) — `memory.html`
+
+## Überblick
+Klassisches Memory zum **Antippen** (kein Ziehen). Noch einfacher als das Blockspiel — ideal als sanfter Einstieg.
+
+## Ablauf
+- Karten liegen verdeckt (Holzrückseite mit Fragezeichen).
+- Antippen dreht eine Karte um. Zwei gleiche Motive bleiben offen (grüner Rahmen).
+- Zwei verschiedene drehen sich nach kurzem Anzeigen wieder zurück (kein Zeitdruck).
+- Spiel gewonnen, wenn alle Paare gefunden sind.
+
+## Schwierigkeit (große Knöpfe oben)
+- **Leicht**: 6 Paare (12 Karten, 4×3)
+- **Mittel**: 8 Paare (16 Karten, 4×4)
+- **Schwer**: 10 Paare (20 Karten, 5×4)
+
+## Details
+- Motive: große, klare Emojis (Tiere, Blumen, Obst).
+- Anzeige: Züge-Zähler. Intern wird die Zeit gemessen → **Bestzeit je Schwierigkeit** (localStorage).
+- Ton per WebAudio (Aufdecken, Treffer, Fehlversuch, Sieg). Ein/Aus-Knopf.
+
+---
+
+# Mahjong Solitaire — `mahjong.html`
+
+## Überblick
+Gleiche Steine paarweise **antippen und wegräumen**. Sehr beliebt bei Senioren.
+
+## Regeln
+- Ein Stein ist **spielbar (frei)**, wenn oben nichts darauf liegt UND links ODER rechts frei ist. Nicht-freie Steine sind leicht abgedunkelt.
+- Zwei freie Steine mit gleichem Motiv tippen → beide verschwinden.
+- Gewonnen, wenn alle Steine weg sind.
+
+## Senioren-Hilfen (nie festsitzen!)
+- **Garantiert lösbares Layout** — durch Rückwärts-Erzeugung (immer paarweise frei). Mit 6000 Test-Boards verifiziert: 0 Fehler.
+- **Zurück** (beliebig oft), **Hinweis** (zeigt ein mögliches Paar), **Mischen** (verteilt die übrigen Steine neu, garantiert mind. einen Zug).
+- Schwierigkeit: **Leicht** (22 Steine), **Mittel** (48), **Schwer** (68).
+- Bestzeit je Schwierigkeit, Ton per WebAudio.
+
+---
+
+# Solitär / Patience (Klondike) — `solitaer.html`
+
+## Überblick
+Klassische Patience — bewusst **so einfach wie möglich** gemacht.
+
+## Senioren-Anpassungen
+- **Antippen statt Ziehen**: Eine Karte antippen → sie wandert automatisch an den besten gültigen Platz (zuerst aufs Ass-Fundament, sonst auf eine passende Spalte).
+- **1 Karte ziehen** (nicht 3) vom Stapel — deutlich leichter.
+- **Automatisches Aufdecken** freigelegter Karten.
+- **„Ablegen"-Knopf**: legt automatisch alle möglichen Karten auf die Fundamente.
+- **Zurück** (beliebig oft) und **Hinweis** (zeigt eine sinnvolle Karte).
+- Leere Spalten nehmen Könige, Fundamente werden A→K nach Farbe gebaut.
+
+## Hinweis
+Klondike-Mischungen sind nicht immer zu 100 % lösbar; durch unbegrenztes Zurücklegen des Stapels, Zurück und Hinweis bleibt es aber stets handhabbar. „Neu" mischt jederzeit neu. Bestzeit in localStorage.

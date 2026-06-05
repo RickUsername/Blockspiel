@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#5C3A1E">
+    <title>Solitär</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-192.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.svg">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            color: #F5E6D0;
+            touch-action: manipulation;
+            -webkit-user-select: none; user-select: none;
+            overflow: hidden;
+        }
+        body {
+            background:
+                repeating-linear-gradient(105deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0.02) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.01) 4px, rgba(0,0,0,0) 5px),
+                radial-gradient(ellipse at 50% 40%, #3A5228 0%, #2E4620 35%, #243A18 60%, #1A2E10 85%, #12200A 100%);
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background: radial-gradient(ellipse 65% 55% at 50% 35%, rgba(255,240,200,0.06) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.5) 100%);
+        }
+
+        #app {
+            display: flex; flex-direction: column; align-items: center;
+            height: 100%; padding: 0.4rem; max-width: 720px; margin: 0 auto;
+            position: relative; z-index: 2;
+        }
+
+        #header {
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            padding: 0.4rem 0.6rem; flex-shrink: 0;
+            background: linear-gradient(180deg, rgba(80,55,30,0.6) 0%, rgba(60,38,18,0.7) 100%);
+            border-radius: 10px; border: 1px solid rgba(120,85,45,0.25);
+            box-shadow: inset 0 1px 0 rgba(255,220,160,0.08), 0 3px 10px rgba(0,0,0,0.4);
+        }
+        #header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 900; color: #E8D4B0; text-shadow: 0 1px 2px rgba(0,0,0,0.6); letter-spacing: 1px; }
+        .icon-btn, .back-btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 48px; height: 48px; color: #D4A040; background: rgba(40,25,12,0.4);
+            border: 1px solid rgba(120,85,45,0.3); border-radius: 10px; text-decoration: none;
+            cursor: pointer; font-size: 1.4rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); line-height: 1;
+            transition: transform 0.12s ease;
+        }
+        .icon-btn:active, .back-btn:active { transform: scale(0.93); }
+        .back-btn svg { width: 24px; height: 24px; }
+        #score-area { display: flex; gap: 0.4rem; align-items: center; }
+        .score-box {
+            display: flex; flex-direction: column; align-items: center;
+            background: linear-gradient(180deg, rgba(40,25,12,0.5) 0%, rgba(30,18,8,0.6) 100%);
+            border-radius: 8px; padding: 0.3rem 0.55rem; min-width: 58px;
+            border: 1px solid rgba(120,85,45,0.2); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .score-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(180,150,100,0.6); font-weight: 700; }
+        .score-box span:last-child { font-size: 1.25rem; font-weight: 700; color: #D4A040; text-shadow: 0 0 6px rgba(212,160,64,0.2); }
+
+        /* ===== Spielbereich ===== */
+        #table {
+            flex: 1 1 auto; width: 100%; min-height: 0; display: flex; flex-direction: column;
+            padding-top: 0.5rem; gap: 0.4rem; overflow: hidden;
+        }
+        #top-row { display: flex; width: 100%; gap: 1.2%; flex-shrink: 0; }
+        #tableau { display: flex; width: 100%; gap: 1.2%; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+        .pile { position: relative; flex: 1 1 0; }
+        .slot {
+            position: absolute; top: 0; left: 0; width: 100%;
+            border-radius: 9%; border: 2px dashed rgba(245,230,208,0.25);
+            background: rgba(0,0,0,0.12);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(245,230,208,0.3); font-size: 1.4rem;
+        }
+
+        /* ===== Karte ===== */
+        .card {
+            position: absolute; left: 0; width: 100%;
+            border-radius: 9%; cursor: pointer;
+            background: linear-gradient(160deg, #ffffff 0%, #f3eee4 100%);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: box-shadow 0.12s ease;
+        }
+        .card .corner {
+            position: absolute; top: 5%; left: 7%;
+            display: flex; flex-direction: column; align-items: center; line-height: 0.95;
+            font-weight: 800; font-family: 'Inter', sans-serif;
+        }
+        .card .pip-center {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            line-height: 1;
+        }
+        .card.red { color: #c0392b; }
+        .card.black { color: #1a1a1a; }
+        .card.facedown {
+            background:
+                repeating-linear-gradient(45deg, rgba(0,0,0,0.12) 0 6px, rgba(255,255,255,0.06) 6px 12px),
+                linear-gradient(160deg, #7A5A38 0%, #5A3C20 55%, #4A3018 100%);
+            border: 1px solid rgba(120,85,45,0.5);
+            box-shadow: inset 0 2px 4px rgba(255,220,160,0.12), 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .card.facedown .corner, .card.facedown .pip-center { display: none; }
+        .card.selectable-hint {
+            animation: hintPulse 0.7s ease 0s 3;
+        }
+        @keyframes hintPulse {
+            0%,100% { box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+            50% { box-shadow: 0 0 0 3px rgba(212,160,64,0.95), 0 0 16px rgba(212,160,64,0.6); }
+        }
+        .card.justmoved { animation: pop 0.25s ease; }
+        @keyframes pop { 0%{transform:scale(0.8);} 100%{transform:scale(1);} }
+
+        #stock .slot { cursor: pointer; }
+
+        /* ===== Buttonleiste ===== */
+        #controls { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; width: 100%; padding: 0.4rem 0 0.2rem; flex-shrink: 0; }
+        .ctrl-btn {
+            background: linear-gradient(180deg, #8B6B40 0%, #7A5A30 40%, #654A25 100%);
+            color: rgba(30,18,8,0.92); text-shadow: 0 1px 0 rgba(255,220,160,0.25);
+            border: 1px solid rgba(120,85,45,0.4); border-radius: 12px;
+            padding: 0.5rem 0.8rem; font-size: 0.92rem; font-weight: 700;
+            font-family: 'Playfair Display', Georgia, serif; cursor: pointer;
+            min-height: 52px; min-width: 72px; letter-spacing: 0.3px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,220,160,0.2), inset 0 -2px 0 rgba(0,0,0,0.2);
+            transition: transform 0.12s ease; display: flex; flex-direction: column; align-items: center; gap: 2px;
+        }
+        .ctrl-btn .ico { font-size: 1.2rem; line-height: 1; }
+        .ctrl-btn:active { transform: scale(0.95); }
+        .ctrl-btn:disabled { opacity: 0.4; filter: grayscale(0.6); cursor: default; }
+
+        /* ===== Overlay ===== */
+        .overlay {
+            position: fixed; inset: 0; background: rgba(5,8,5,0.85);
+            display: flex; align-items: center; justify-content: center; z-index: 100;
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fadeIn 0.3s ease;
+        }
+        .overlay.hidden { display: none; }
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+        .overlay-box {
+            background: linear-gradient(160deg, #6B4A2C 0%, #5A3C20 40%, #4A3018 100%);
+            border: 1px solid rgba(120,85,45,0.35); border-radius: 16px;
+            padding: 2.2rem 2.4rem; text-align: center; max-width: 90vw;
+            box-shadow: 0 16px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,220,160,0.1);
+            animation: popIn 0.35s ease;
+        }
+        @keyframes popIn { from{transform:scale(0.85);opacity:0;} to{transform:scale(1);opacity:1;} }
+        .overlay-box .trophy { font-size: 3.2rem; margin-bottom: 0.4rem; }
+        .overlay-box h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.9rem; font-weight: 900; color: #F8E6C0; margin-bottom: 0.7rem; }
+        .overlay-box p { font-size: 1.2rem; color: #F5E6D0; margin-bottom: 0.4rem; }
+        .overlay-box .stat { color: #D4A040; font-weight: 700; }
+        .big-btn {
+            background: linear-gradient(180deg, #8B6B40 0%, #7A5A30 40%, #654A25 100%);
+            color: rgba(30,18,8,0.92); text-shadow: 0 1px 0 rgba(255,220,160,0.2);
+            border: 1px solid rgba(120,85,45,0.4); border-radius: 12px; padding: 0.85rem 2rem;
+            font-size: 1.15rem; font-weight: 700; font-family: 'Playfair Display', Georgia, serif;
+            cursor: pointer; letter-spacing: 1px; margin-top: 1.1rem; min-height: 60px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,220,160,0.2);
+            transition: transform 0.12s ease;
+        }
+        .big-btn:active { transform: scale(0.96); }
+
+        @media (max-width: 420px) {
+            #header h1 { font-size: 1.15rem; }
+            .icon-btn, .back-btn { width: 44px; height: 44px; }
+            .ctrl-btn { min-width: 64px; padding: 0.45rem 0.5rem; font-size: 0.82rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <a href="index.html" class="back-btn" aria-label="Zurück zum Menü">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </a>
+            <h1>Solitär</h1>
+            <div id="score-area">
+                <div class="score-box"><span class="score-label">Abgelegt</span><span id="done-count">0</span></div>
+                <button class="icon-btn" id="mute-btn" aria-label="Ton an/aus">🔊</button>
+            </div>
+        </div>
+
+        <div id="table">
+            <div id="top-row">
+                <div class="pile" id="stock"></div>
+                <div class="pile" id="waste"></div>
+                <div class="pile" id="gap" style="visibility:hidden"></div>
+                <div class="pile foundation" data-suit="0"></div>
+                <div class="pile foundation" data-suit="1"></div>
+                <div class="pile foundation" data-suit="2"></div>
+                <div class="pile foundation" data-suit="3"></div>
+            </div>
+            <div id="tableau">
+                <div class="pile tab" data-i="0"></div>
+                <div class="pile tab" data-i="1"></div>
+                <div class="pile tab" data-i="2"></div>
+                <div class="pile tab" data-i="3"></div>
+                <div class="pile tab" data-i="4"></div>
+                <div class="pile tab" data-i="5"></div>
+                <div class="pile tab" data-i="6"></div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <button class="ctrl-btn" id="undo-btn"><span class="ico">↩️</span>Zurück</button>
+            <button class="ctrl-btn" id="hint-btn"><span class="ico">💡</span>Hinweis</button>
+            <button class="ctrl-btn" id="auto-btn"><span class="ico">⬆️</span>Ablegen</button>
+            <button class="ctrl-btn" id="new-btn"><span class="ico">🔄</span>Neu</button>
+        </div>
+    </div>
+
+    <div id="win" class="overlay hidden">
+        <div class="overlay-box">
+            <div class="trophy">🏆</div>
+            <h2>Gewonnen!</h2>
+            <p>Alle Karten abgelegt!</p>
+            <p class="stat" id="win-time"></p>
+            <button class="big-btn" id="win-again">Nochmal spielen</button>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        const SUITS = ['♠','♥','♦','♣'];                 // 0,3 = schwarz; 1,2 = rot
+        const RANKS = ['', 'A','2','3','4','5','6','7','8','9','10','B','D','K']; // 1..13
+        function isRed(suit) { return suit === 1 || suit === 2; }
+        function color(suit) { return isRed(suit) ? 'red' : 'black'; }
+
+        // ===== Zustand =====
+        let stock = [], waste = [], foundations = [[],[],[],[]], tableau = [[],[],[],[],[],[],[]];
+        let undoStack = [];
+        let startTime = 0;
+        let busy = false;
+
+        // ===== Ton =====
+        let audioCtx = null;
+        let muted = localStorage.getItem('solitaerMuted') === '1';
+        updateMuteBtn();
+        function ensureAudio() {
+            if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; } }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function tone(freq, dur, type, vol) {
+            if (muted) return; ensureAudio(); if (!audioCtx) return;
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = type || 'sine'; o.frequency.value = freq; g.gain.value = 0;
+            o.connect(g); g.connect(audioCtx.destination);
+            const t = audioCtx.currentTime;
+            g.gain.linearRampToValueAtTime(vol || 0.16, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.16));
+            o.start(t); o.stop(t + (dur || 0.16) + 0.02);
+        }
+        const sndPlace = () => tone(440, 0.09, 'sine', 0.13);
+        const sndFound = () => { tone(660, 0.09, 'sine', 0.15); setTimeout(() => tone(880, 0.14, 'sine', 0.15), 80); };
+        const sndFlip  = () => tone(360, 0.08, 'sine', 0.12);
+        const sndNope  = () => tone(200, 0.14, 'triangle', 0.1);
+        const sndDraw  = () => tone(300, 0.07, 'sine', 0.1);
+        function sndWin() { [523,659,784,1047,1319].forEach((f,i) => setTimeout(() => tone(f,0.25,'sine',0.2), i*150)); }
+
+        function updateMuteBtn() {
+            const b = document.getElementById('mute-btn');
+            b.textContent = muted ? '🔇' : '🔊';
+            b.style.color = muted ? '#c0654a' : '#D4A040';
+        }
+        document.getElementById('mute-btn').addEventListener('click', () => {
+            muted = !muted; localStorage.setItem('solitaerMuted', muted ? '1' : '0'); updateMuteBtn(); if (!muted) sndFlip();
+        });
+
+        // ===== Helfer =====
+        function shuffle(a) { for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+        function cloneState() {
+            return {
+                stock: stock.map(c => ({...c})),
+                waste: waste.map(c => ({...c})),
+                foundations: foundations.map(f => f.map(c => ({...c}))),
+                tableau: tableau.map(t => t.map(c => ({...c})))
+            };
+        }
+        function pushUndo() { undoStack.push(cloneState()); if (undoStack.length > 300) undoStack.shift(); }
+        function restoreState(s) {
+            stock = s.stock.map(c => ({...c}));
+            waste = s.waste.map(c => ({...c}));
+            foundations = s.foundations.map(f => f.map(c => ({...c})));
+            tableau = s.tableau.map(t => t.map(c => ({...c})));
+        }
+
+        // ===== Regeln =====
+        function canToFoundation(card) {
+            const f = foundations[card.suit];
+            if (f.length === 0) return card.rank === 1;
+            return f[f.length - 1].rank === card.rank - 1;
+        }
+        function canToTableau(card, pileIndex) {
+            const p = tableau[pileIndex];
+            if (p.length === 0) return card.rank === 13;
+            const top = p[p.length - 1];
+            return top.faceUp && color(top.suit) !== color(card.suit) && top.rank === card.rank + 1;
+        }
+        // gültige absteigende, farbwechselnde Folge ab Index?
+        function isValidRun(pile, fromIdx) {
+            for (let i = fromIdx; i < pile.length; i++) {
+                if (!pile[i].faceUp) return false;
+                if (i > fromIdx) {
+                    const prev = pile[i-1], cur = pile[i];
+                    if (!(color(prev.suit) !== color(cur.suit) && prev.rank === cur.rank + 1)) return false;
+                }
+            }
+            return true;
+        }
+
+        // ===== Deal =====
+        function deal() {
+            const d = [];
+            for (let s = 0; s < 4; s++) for (let r = 1; r <= 13; r++) d.push({ suit: s, rank: r, faceUp: false });
+            shuffle(d);
+            stock = []; waste = []; foundations = [[],[],[],[]]; tableau = [[],[],[],[],[],[],[]];
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j <= i; j++) {
+                    const card = d.pop();
+                    card.faceUp = (j === i);
+                    tableau[i].push(card);
+                }
+            }
+            stock = d;            // Rest verdeckt
+            stock.forEach(c => c.faceUp = false);
+        }
+
+        // ===== Layout-Maße =====
+        let cardW = 50, cardH = 70, downOff = 12, upOff = 20;
+        function computeMetrics() {
+            const tableEl = document.getElementById('table');
+            const w = tableEl.clientWidth;
+            const gap = w * 0.012;
+            cardW = (w - 6 * gap) / 7;
+            cardH = cardW * 1.4;
+            downOff = cardH * 0.18;
+            upOff = cardH * 0.30;
+        }
+
+        // ===== Rendering =====
+        function cardInner(card) {
+            const sym = SUITS[card.suit];
+            const rk = RANKS[card.rank];
+            return '<div class="corner" style="font-size:' + (cardW*0.34) + 'px">' +
+                       '<span>' + rk + '</span><span>' + sym + '</span>' +
+                   '</div>' +
+                   '<div class="pip-center" style="font-size:' + (cardW*0.72) + 'px">' + sym + '</div>';
+        }
+
+        function makeCardEl(card, faceUpOverride) {
+            const up = faceUpOverride !== undefined ? faceUpOverride : card.faceUp;
+            const el = document.createElement('div');
+            el.className = 'card ' + (up ? color(card.suit) : 'facedown');
+            el.style.height = cardH + 'px';
+            if (up) el.innerHTML = cardInner(card);
+            return el;
+        }
+
+        function emptySlot(symbol, cls) {
+            const s = document.createElement('div');
+            s.className = 'slot' + (cls ? ' ' + cls : '');
+            s.style.height = cardH + 'px';
+            if (symbol) s.textContent = symbol;
+            return s;
+        }
+
+        function render() {
+            computeMetrics();
+
+            // Stock
+            const stockEl = document.getElementById('stock');
+            stockEl.innerHTML = '';
+            stockEl.style.height = cardH + 'px';
+            if (stock.length > 0) {
+                const c = makeCardEl(stock[stock.length-1], false);
+                stockEl.appendChild(c);
+            } else {
+                stockEl.appendChild(emptySlot('↻'));
+            }
+            stockEl.onclick = onStockClick;
+
+            // Waste
+            const wasteEl = document.getElementById('waste');
+            wasteEl.innerHTML = '';
+            wasteEl.style.height = cardH + 'px';
+            if (waste.length > 0) {
+                const c = makeCardEl(waste[waste.length-1], true);
+                c.onclick = onWasteClick;
+                wasteEl.appendChild(c);
+            } else {
+                wasteEl.appendChild(emptySlot(''));
+            }
+
+            // Foundations
+            document.querySelectorAll('.foundation').forEach(fEl => {
+                const suit = Number(fEl.dataset.suit);
+                fEl.innerHTML = '';
+                fEl.style.height = cardH + 'px';
+                const f = foundations[suit];
+                if (f.length > 0) {
+                    const c = makeCardEl(f[f.length-1], true);
+                    c.onclick = () => onFoundationClick(suit);
+                    fEl.appendChild(c);
+                } else {
+                    fEl.appendChild(emptySlot(SUITS[suit], color(suit)));
+                }
+            });
+
+            // Tableau
+            document.querySelectorAll('.tab').forEach(tEl => {
+                const i = Number(tEl.dataset.i);
+                tEl.innerHTML = '';
+                const pile = tableau[i];
+                let y = 0;
+                if (pile.length === 0) {
+                    const s = emptySlot('');
+                    tEl.appendChild(s);
+                    tEl.style.height = cardH + 'px';
+                } else {
+                    pile.forEach((card, idx) => {
+                        const el = makeCardEl(card);
+                        el.style.top = y + 'px';
+                        el.style.zIndex = idx + 1;
+                        if (card.faceUp) {
+                            el.onclick = () => onTableauClick(i, idx);
+                        } else if (idx === pile.length - 1) {
+                            el.onclick = () => onTableauClick(i, idx); // verdeckte oberste -> aufdecken
+                        }
+                        tEl.appendChild(el);
+                        y += (card.faceUp ? upOff : downOff);
+                    });
+                    tEl.style.height = (y - (pile[pile.length-1].faceUp ? upOff : downOff) + cardH) + 'px';
+                }
+            });
+
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const done = foundations.reduce((s, f) => s + f.length, 0);
+            document.getElementById('done-count').textContent = done;
+            document.getElementById('undo-btn').disabled = undoStack.length === 0;
+        }
+
+        // ===== Aktionen =====
+        function onStockClick() {
+            if (busy) return;
+            ensureAudio();
+            pushUndo();
+            if (stock.length > 0) {
+                const c = stock.pop(); c.faceUp = true; waste.push(c); sndDraw();
+            } else if (waste.length > 0) {
+                // Stapel zurücklegen
+                while (waste.length) { const c = waste.pop(); c.faceUp = false; stock.push(c); }
+                sndFlip();
+            } else {
+                undoStack.pop(); return; // nichts zu tun
+            }
+            render();
+        }
+
+        function onWasteClick() {
+            if (busy || waste.length === 0) return;
+            const card = waste[waste.length - 1];
+            tryMoveSingle(card, () => { waste.pop(); });
+        }
+
+        function onFoundationClick(suit) {
+            if (busy) return;
+            const f = foundations[suit];
+            if (f.length === 0) return;
+            const card = f[f.length - 1];
+            // Nur in Tableau zurücklegbar
+            const dest = findTableauDest(card);
+            if (dest === -1) { sndNope(); return; }
+            pushUndo();
+            f.pop();
+            tableau[dest].push(card);
+            sndPlace();
+            render();
+        }
+
+        function onTableauClick(pileIndex, cardIndex) {
+            if (busy) return;
+            const pile = tableau[pileIndex];
+            const card = pile[cardIndex];
+            ensureAudio();
+
+            // Verdeckte oberste Karte aufdecken
+            if (!card.faceUp) {
+                if (cardIndex === pile.length - 1) {
+                    pushUndo();
+                    card.faceUp = true;
+                    sndFlip();
+                    render();
+                }
+                return;
+            }
+
+            const run = pile.slice(cardIndex);
+            if (!isValidRun(pile, cardIndex)) { sndNope(); return; }
+
+            if (run.length === 1) {
+                tryMoveSingle(card, () => { pile.pop(); flipExposed(pileIndex); }, pileIndex);
+            } else {
+                // Folge -> nur auf Tableau
+                const dest = findTableauDest(card, pileIndex);
+                if (dest === -1) { sndNope(); return; }
+                pushUndo();
+                const moving = pile.splice(cardIndex);
+                moving.forEach(c => tableau[dest].push(c));
+                flipExposed(pileIndex);
+                sndPlace();
+                render();
+            }
+        }
+
+        // einzelne Karte: zuerst Fundament, dann Tableau
+        function tryMoveSingle(card, removeFn, fromTableauIndex) {
+            if (canToFoundation(card)) {
+                pushUndo();
+                removeFn();
+                foundations[card.suit].push(card);
+                sndFound();
+                render();
+                checkWin();
+                return true;
+            }
+            const dest = findTableauDest(card, fromTableauIndex);
+            if (dest !== -1) {
+                pushUndo();
+                removeFn();
+                tableau[dest].push(card);
+                sndPlace();
+                render();
+                return true;
+            }
+            sndNope();
+            return false;
+        }
+
+        // bestes Tableau-Ziel finden: bevorzugt belegte passende Stapel, dann leere
+        function findTableauDest(card, excludeIndex) {
+            let emptyDest = -1;
+            for (let i = 0; i < 7; i++) {
+                if (i === excludeIndex) continue;
+                if (tableau[i].length === 0) {
+                    if (card.rank === 13 && emptyDest === -1) emptyDest = i;
+                } else if (canToTableau(card, i)) {
+                    return i; // belegter passender Stapel bevorzugt
+                }
+            }
+            return emptyDest;
+        }
+
+        function flipExposed(pileIndex) {
+            const p = tableau[pileIndex];
+            if (p.length > 0 && !p[p.length - 1].faceUp) {
+                p[p.length - 1].faceUp = true;
+                setTimeout(sndFlip, 60);
+            }
+        }
+
+        // ===== Undo =====
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (busy || undoStack.length === 0) return;
+            restoreState(undoStack.pop());
+            sndFlip();
+            render();
+        });
+
+        // ===== Hinweis ===== (zeigt eine sinnvolle Karte)
+        document.getElementById('hint-btn').addEventListener('click', () => {
+            if (busy) return;
+            const hint = findHint();
+            if (!hint) { sndNope(); return; }
+            sndFlip();
+            // hint = {pile:'waste'|'tab'|'stock', i, idx}
+            let el = null;
+            if (hint.pile === 'waste') el = document.querySelector('#waste .card');
+            else if (hint.pile === 'stock') el = document.querySelector('#stock .card, #stock .slot');
+            else if (hint.pile === 'tab') {
+                const tabEl = document.querySelector('.tab[data-i="' + hint.i + '"]');
+                if (tabEl) el = tabEl.children[hint.idx];
+            }
+            if (el) { el.classList.remove('selectable-hint'); void el.offsetWidth; el.classList.add('selectable-hint'); }
+        });
+
+        function findHint() {
+            // 1) Waste -> Fundament
+            if (waste.length && canToFoundation(waste[waste.length-1])) return { pile: 'waste' };
+            // 2) Tableau-Spitze -> Fundament
+            for (let i = 0; i < 7; i++) {
+                const p = tableau[i];
+                if (p.length && p[p.length-1].faceUp && canToFoundation(p[p.length-1])) return { pile: 'tab', i, idx: p.length-1 };
+            }
+            // 3) Tableau-Zug der eine verdeckte Karte aufdeckt
+            for (let i = 0; i < 7; i++) {
+                const p = tableau[i];
+                for (let idx = 0; idx < p.length; idx++) {
+                    if (!p[idx].faceUp) continue;
+                    if (!isValidRun(p, idx)) continue;
+                    // Zug deckt auf, wenn darunter eine verdeckte Karte liegt (idx>0 und idx-1 verdeckt)
+                    const revealing = idx > 0 && !p[idx-1].faceUp;
+                    const emptying = idx === 0; // ganzen Stapel auf leeren verschieben
+                    if ((revealing || emptying) && findTableauDest(p[idx], i) !== -1) return { pile: 'tab', i, idx };
+                }
+            }
+            // 4) Waste -> Tableau
+            if (waste.length && findTableauDest(waste[waste.length-1]) !== -1) return { pile: 'waste' };
+            // 5) Stock ziehen
+            if (stock.length || waste.length) return { pile: 'stock' };
+            return null;
+        }
+
+        // ===== Auto-Ablegen (alle möglichen Karten aufs Fundament) =====
+        document.getElementById('auto-btn').addEventListener('click', () => {
+            if (busy) return;
+            let movedAny = false;
+            let safety = 0;
+            // ein Undo-Schritt für die ganze Aktion
+            const snapshot = cloneState();
+            function step() {
+                let moved = false;
+                // Waste
+                if (waste.length && canToFoundation(waste[waste.length-1])) {
+                    const c = waste.pop(); foundations[c.suit].push(c); moved = true;
+                }
+                // Tableau-Spitzen
+                if (!moved) {
+                    for (let i = 0; i < 7; i++) {
+                        const p = tableau[i];
+                        if (p.length && p[p.length-1].faceUp && canToFoundation(p[p.length-1])) {
+                            const c = p.pop(); foundations[c.suit].push(c); flipExposed(i); moved = true; break;
+                        }
+                    }
+                }
+                if (moved) { movedAny = true; safety++; sndFound(); render(); if (safety < 60) setTimeout(step, 140); else finish(); }
+                else finish();
+            }
+            function finish() {
+                busy = false;
+                if (movedAny) checkWin();
+                else sndNope();
+            }
+            if (waste.length || tableau.some(p => p.length)) {
+                busy = true;
+                undoStack.push(snapshot);
+                step();
+            }
+        });
+
+        // ===== Neues Spiel =====
+        function newGame() {
+            deal();
+            undoStack = [];
+            busy = false;
+            startTime = Date.now();
+            document.getElementById('win').classList.add('hidden');
+            render();
+        }
+        document.getElementById('new-btn').addEventListener('click', newGame);
+
+        // ===== Sieg =====
+        function formatTime(sec) {
+            const m = Math.floor(sec/60), s = sec%60;
+            return m > 0 ? (m + ' Min ' + s + ' Sek') : (s + ' Sekunden');
+        }
+        function checkWin() {
+            const done = foundations.reduce((s,f) => s + f.length, 0);
+            if (done === 52) {
+                sndWin();
+                const secs = Math.round((Date.now() - startTime) / 1000);
+                document.getElementById('win-time').textContent = 'Zeit: ' + formatTime(secs);
+                const k = 'solitaerBest';
+                const prev = Number(localStorage.getItem(k) || 0);
+                if (prev === 0 || secs < prev) localStorage.setItem(k, String(secs));
+                setTimeout(() => document.getElementById('win').classList.remove('hidden'), 500);
+            }
+        }
+        document.getElementById('win-again').addEventListener('click', newGame);
+
+        // ===== Resize =====
+        let resizeTimer = null;
+        window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
+
+        // ===== Service Worker =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').then(reg => reg.update()).catch(() => {});
+        }
+
+        newGame();
+    })();
+    </script>
+</body>
+</html>

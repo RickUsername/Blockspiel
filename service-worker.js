@@ -1,9 +1,16 @@
-const CACHE_NAME = 'blockspiel-v8';
+const CACHE_NAME = 'gamehub-v2';
 const ASSETS = [
     './',
     './index.html',
+    './blockspiel.html',
+    './minigolf.html',
+    './memory.html',
+    './mahjong.html',
+    './solitaer.html',
     './css/style.css',
+    './css/minigolf.css',
     './js/game.js',
+    './js/minigolf.js',
     './manifest.json',
     './assets/icons/icon-192.svg',
     './assets/icons/icon-512.svg'
