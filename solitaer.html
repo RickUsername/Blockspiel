@@ -139,11 +139,13 @@
         .ctrl-btn:active { transform: scale(0.95); }
         .ctrl-btn:disabled { opacity: 0.4; filter: grayscale(0.6); cursor: default; }
 
+        .record-line { text-align: center; font-size: 1rem; color: #D4A040; font-weight: 700; padding: 0.15rem 0.5rem 0.4rem; letter-spacing: 0.3px; flex-shrink: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
         /* ===== Overlay ===== */
         .overlay {
-            position: fixed; inset: 0; background: rgba(5,8,5,0.85);
+            position: fixed; inset: 0; background: rgba(5,8,5,0.92);
             display: flex; align-items: center; justify-content: center; z-index: 100;
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.3s ease;
         }
         .overlay.hidden { display: none; }
         @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
@@ -217,6 +219,7 @@
             <button class="ctrl-btn" id="auto-btn"><span class="ico">⬆️</span>Ablegen</button>
             <button class="ctrl-btn" id="new-btn"><span class="ico">🔄</span>Neu</button>
         </div>
+        <div id="record-line" class="record-line"></div>
     </div>
 
     <div id="win" class="overlay hidden">
@@ -671,6 +674,7 @@
             startTime = Date.now();
             document.getElementById('win').classList.add('hidden');
             render();
+            updateRecordLine();
         }
         document.getElementById('new-btn').addEventListener('click', newGame);
 
@@ -678,6 +682,11 @@
         function formatTime(sec) {
             const m = Math.floor(sec/60), s = sec%60;
             return m > 0 ? (m + ' Min ' + s + ' Sek') : (s + ' Sekunden');
+        }
+        function updateRecordLine() {
+            const best = Number(localStorage.getItem('solitaerBest') || 0);
+            document.getElementById('record-line').textContent =
+                '🏆 Bestzeit: ' + (best > 0 ? formatTime(best) : 'noch keine');
         }
         function checkWin() {
             const done = foundations.reduce((s,f) => s + f.length, 0);
@@ -688,6 +697,7 @@
                 const k = 'solitaerBest';
                 const prev = Number(localStorage.getItem(k) || 0);
                 if (prev === 0 || secs < prev) localStorage.setItem(k, String(secs));
+                updateRecordLine();
                 setTimeout(() => document.getElementById('win').classList.remove('hidden'), 500);
             }
         }

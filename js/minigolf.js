@@ -212,8 +212,14 @@ function updateCustomTournamentUI() {
     });
 }
 
+function getDPR() {
+    // Render-Auflösung auf schwacher Hardware begrenzen: spart enorm Füllrate
+    // (ein 2x/3x-Display würde sonst die 4-/9-fache Pixelmenge pro Frame zeichnen)
+    return Math.min(window.devicePixelRatio || 1, 1.5);
+}
+
 function resizeCanvas() {
-    const pr = window.devicePixelRatio || 1;
+    const pr = getDPR();
     let cw = canvas.parentElement.clientWidth;
     let ch = canvas.parentElement.clientHeight;
     canvas.width = cw * pr;
@@ -312,7 +318,7 @@ function centerCamera() {
     const levelWidth = maxX - minX;
     const levelHeight = maxY - minY;
 
-    const pr = window.devicePixelRatio || 1;
+    const pr = getDPR();
     // Effective drawable area (subtract UI overlays in editor mode)
     let effW = canvas.width;
     let effH = canvas.height;
@@ -353,7 +359,7 @@ function updateUI() {
 // Controls
 function getPointerPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const pr = window.devicePixelRatio || 1;
+    const pr = getDPR();
     let x, y;
     if (e.touches && e.touches.length > 0) {
         x = (e.touches[0].clientX - rect.left) * pr;
@@ -367,7 +373,7 @@ function getPointerPos(e) {
 
 function getPinchDist(e) {
     if (e.touches && e.touches.length >= 2) {
-        const pr = window.devicePixelRatio || 1;
+        const pr = getDPR();
         const dx = (e.touches[0].clientX - e.touches[1].clientX) * pr;
         const dy = (e.touches[0].clientY - e.touches[1].clientY) * pr;
         return Math.sqrt(dx*dx + dy*dy);
@@ -377,7 +383,7 @@ function getPinchDist(e) {
 
 function getPinchCenter(e) {
     const rect = canvas.getBoundingClientRect();
-    const pr = window.devicePixelRatio || 1;
+    const pr = getDPR();
     return {
         x: ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * pr,
         y: ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top) * pr
@@ -397,7 +403,7 @@ canvas.addEventListener('mousedown', (e) => {
 });
 canvas.addEventListener('mousemove', (e) => {
     if (playPanStart) {
-        const pr = window.devicePixelRatio || 1;
+        const pr = getDPR();
         cam.x += (e.clientX - playPanStart.x) * pr;
         cam.y += (e.clientY - playPanStart.y) * pr;
         playPanStart = { x: e.clientX, y: e.clientY };
@@ -417,7 +423,7 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 canvas.addEventListener('wheel', (e) => {
     if (isPopupVisible() && !isEditorMode) return;
     e.preventDefault();
-    const pr = window.devicePixelRatio || 1;
+    const pr = getDPR();
     const rect = canvas.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * pr;
     const cy = (e.clientY - rect.top) * pr;
@@ -538,7 +544,7 @@ function pointerMove(e) {
         if (editorTool === 'pan' && editorPanStart) {
             const curX = e.touches ? e.touches[0].clientX : e.clientX;
             const curY = e.touches ? e.touches[0].clientY : e.clientY;
-            const pr = window.devicePixelRatio || 1;
+            const pr = getDPR();
             cam.x += (curX - editorPanStart.x) * pr;
             cam.y += (curY - editorPanStart.y) * pr;
             editorPanStart = { x: curX, y: curY };
@@ -803,76 +809,40 @@ function finishGame() {
 
 // Draw Objects Helper with Premium Graphics
 function drawEnv(envWalls, envSand, envWater) {
-    const t = Date.now() / 1000;
+    // Vereinfachte, flache Darstellung ohne teure Muster-Schleifen oder
+    // animiertes Wasser pro Frame -> deutlich schneller auf schwacher Hardware.
 
-    // Draw Sand
+    // Sand
     envSand.forEach(s => {
         ctx.fillStyle = '#d2b97f';
         ctx.fillRect(s.x, s.y, s.w, s.h);
-        
-        ctx.fillStyle = 'rgba(0,0,0,0.1)';
-        ctx.fillRect(s.x, s.y, s.w, 4);
-        ctx.fillRect(s.x, s.y, 4, s.h);
-
-        ctx.fillStyle = '#bfa56a';
-        ctx.beginPath();
-        for (let i = 10; i < s.w; i += 20) {
-            for (let j = 10; j < s.h; j += 20) {
-                if ((i + j) % 40 === 0) {
-                    ctx.rect(s.x + i - 2, s.y + j - 2, 4, 4);
-                }
-            }
-        }
-        ctx.fill();
-        
         ctx.strokeStyle = '#a68b4f';
         ctx.lineWidth = 2;
         ctx.strokeRect(s.x, s.y, s.w, s.h);
     });
 
-    // Draw Water
+    // Wasser
     envWater.forEach(w => {
         let grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.h);
         grad.addColorStop(0, '#2e78c4');
         grad.addColorStop(1, '#1b5b91');
         ctx.fillStyle = grad;
         ctx.fillRect(w.x, w.y, w.w, w.h);
-        
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let i = 10; i < w.w - 10; i += 30) {
-            for (let j = 10; j < w.h - 10; j += 25) {
-                let yOffset = Math.sin(t * 2 + i) * 4;
-                ctx.moveTo(w.x + i, w.y + j + yOffset);
-                ctx.arcTo(w.x + i + 5, w.y + j - 5 + yOffset, w.x + i + 10, w.y + j + yOffset, 5);
-            }
-        }
-        ctx.stroke();
-
         ctx.strokeStyle = '#103960';
         ctx.lineWidth = 2;
         ctx.strokeRect(w.x, w.y, w.w, w.h);
     });
 
-    // Draw Walls
+    // Wände (Hell-/Dunkelkante für etwas Tiefe, aber ohne Maserungs-Schleifen)
     envWalls.forEach(w => {
         ctx.fillStyle = '#785335';
         ctx.fillRect(w.x, w.y, w.w, w.h);
-
         ctx.fillStyle = 'rgba(255,255,255,0.15)';
         ctx.fillRect(w.x, w.y, w.w, 4);
         ctx.fillRect(w.x, w.y, 4, w.h);
-
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.fillRect(w.x, w.y + w.h - 4, w.w, 4);
         ctx.fillRect(w.x + w.w - 4, w.y, 4, w.h);
-        
-        ctx.fillStyle = 'rgba(0,0,0,0.08)';
-        ctx.beginPath();
-        for(let i=10; i<w.w; i+=20) { ctx.rect(w.x+i, w.y+4, 1, w.h-8); }
-        for(let j=10; j<w.h; j+=20) { ctx.rect(w.x+4, w.y+j, w.w-8, 1); }
-        ctx.fill();
     });
 }
 
@@ -979,6 +949,8 @@ function draw() {
 }
 
 function loop() {
+    // Hinter Menüs/Popups (nicht im Editor) nichts zeichnen -> spart Strom & verhindert Hitze-Drosselung
+    if (!isEditorMode && isPopupVisible()) { requestAnimationFrame(loop); return; }
     updatePhysics();
     draw();
     requestAnimationFrame(loop);

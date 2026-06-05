@@ -153,6 +153,17 @@
             outline-offset: 2px;
         }
 
+        .record-line {
+            text-align: center;
+            font-size: 1rem;
+            color: #D4A040;
+            font-weight: 700;
+            padding: 0.35rem 0.5rem;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+
         /* ===== Spielbrett ===== */
         #board-wrap {
             flex: 1 1 auto;
@@ -242,13 +253,11 @@
         #win {
             position: fixed;
             inset: 0;
-            background: rgba(5,8,5,0.85);
+            background: rgba(5,8,5,0.92);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
             animation: fadeIn 0.3s ease;
         }
         #win.hidden { display: none; }
@@ -325,6 +334,7 @@
             <button class="diff-btn" data-pairs="8">Mittel</button>
             <button class="diff-btn" data-pairs="10">Schwer</button>
         </div>
+        <div id="record-line" class="record-line"></div>
 
         <div id="board-wrap">
             <div id="board"></div>
@@ -444,6 +454,7 @@
             document.querySelectorAll('.diff-btn').forEach(b => {
                 b.classList.toggle('active', Number(b.dataset.pairs) === p);
             });
+            updateRecordLine();
 
             // Motive wählen und Deck bauen
             const picks = shuffle(MOTIFS.slice()).slice(0, pairs);
@@ -550,6 +561,13 @@
             return m > 0 ? (m + ' Min ' + s + ' Sek') : (s + ' Sekunden');
         }
 
+        function diffName(p) { return p === 6 ? 'Leicht' : p === 8 ? 'Mittel' : 'Schwer'; }
+        function updateRecordLine() {
+            const best = Number(localStorage.getItem('memoryBest_' + pairs) || 0);
+            document.getElementById('record-line').textContent =
+                '🏆 Bestzeit ' + diffName(pairs) + ': ' + (best > 0 ? formatTime(best) : 'noch keine');
+        }
+
         // ===== Sieg =====
         function onWin() {
             const secs = elapsedSeconds();
@@ -568,6 +586,7 @@
             } else {
                 recEl.classList.add('hidden');
             }
+            updateRecordLine();
 
             setTimeout(() => winEl.classList.remove('hidden'), 600);
         }

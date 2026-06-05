@@ -158,11 +158,13 @@
         }
         .diff-btn.active { background: linear-gradient(180deg,#8B6B40,#654A25); color: rgba(30,18,8,0.9); outline: 2px solid #5DAA5D; outline-offset: 1px; }
 
+        .record-line { text-align: center; font-size: 1rem; color: #D4A040; font-weight: 700; padding: 0.3rem 0.5rem 0.4rem; letter-spacing: 0.3px; flex-shrink: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
         /* ===== Overlay ===== */
         .overlay {
-            position: fixed; inset: 0; background: rgba(5,8,5,0.85);
+            position: fixed; inset: 0; background: rgba(5,8,5,0.92);
             display: flex; align-items: center; justify-content: center; z-index: 100;
-            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.3s ease;
         }
         .overlay.hidden { display: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -226,6 +228,7 @@
             <button class="diff-btn" data-level="mittel">Mittel</button>
             <button class="diff-btn" data-level="schwer">Schwer</button>
         </div>
+        <div id="record-line" class="record-line"></div>
     </div>
 
     <div id="win" class="overlay hidden">
@@ -447,6 +450,19 @@
             document.getElementById('undo-btn').disabled = undoStack.length === 0;
         }
 
+        // Nur die Frei/Blockiert-Klassen der vorhandenen Steine aktualisieren
+        // (viel günstiger als das gesamte Brett neu aufzubauen)
+        function updateFreeClasses() {
+            tiles.forEach(t => {
+                if (t.removed) return;
+                const el = tileEl(t.id);
+                if (!el) return;
+                const free = isFree(t);
+                el.classList.toggle('free', free);
+                el.classList.toggle('blocked', !free);
+            });
+        }
+
         // ====== Interaktion ======
         function onTileClick(t) {
             if (busy || t.removed) return;
@@ -484,7 +500,11 @@
             undoStack.push({ aId: a.id, bId: b.id });
             setTimeout(() => {
                 a.removed = true; b.removed = true;
-                render();             // erneut zeichnen -> Freiheiten aktualisieren
+                // nur die zwei Steine entfernen + Klassen aktualisieren statt alles neu zu bauen
+                if (ea) ea.remove();
+                if (eb) eb.remove();
+                updateFreeClasses();
+                updateStatus();
                 busy = false;
                 if (tiles.every(t => t.removed)) onWin();
             }, 280);
@@ -544,6 +564,7 @@
         function newGame(lv) {
             level = lv;
             document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', b.dataset.level === lv));
+            updateRecordLine();
             winEl.classList.add('hidden');
             selected = null;
             undoStack = [];
@@ -561,6 +582,12 @@
             const m = Math.floor(sec / 60), s = sec % 60;
             return m > 0 ? (m + ' Min ' + s + ' Sek') : (s + ' Sekunden');
         }
+        function levelLabel(lv) { return lv === 'leicht' ? 'Leicht' : lv === 'mittel' ? 'Mittel' : 'Schwer'; }
+        function updateRecordLine() {
+            const best = Number(localStorage.getItem('mahjongBest_' + level) || 0);
+            document.getElementById('record-line').textContent =
+                '🏆 Bestzeit ' + levelLabel(level) + ': ' + (best > 0 ? formatTime(best) : 'noch keine');
+        }
         function onWin() {
             const secs = Math.round((Date.now() - startTime) / 1000);
             sndWin();
@@ -570,6 +597,7 @@
             const rec = document.getElementById('win-record');
             if (prev === 0 || secs < prev) { localStorage.setItem(k, String(secs)); rec.classList.remove('hidden'); }
             else rec.classList.add('hidden');
+            updateRecordLine();
             setTimeout(() => winEl.classList.remove('hidden'), 500);
         }
         document.getElementById('win-again').addEventListener('click', () => newGame(level));
