@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#5C3A1E">
+    <title>Früchte</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icons/icon-192.svg">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.svg">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            color: #F5E6D0;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        body {
+            background:
+                repeating-linear-gradient(105deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0.02) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.01) 4px, rgba(0,0,0,0) 5px),
+                radial-gradient(ellipse at 50% 40%, #3A5228 0%, #2E4620 35%, #243A18 60%, #1A2E10 85%, #12200A 100%);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(ellipse 65% 55% at 50% 35%, rgba(255,240,200,0.06) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.5) 100%);
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            padding: 0.5rem;
+            max-width: 640px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ===== Header ===== */
+        #header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.6rem;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, rgba(80,55,30,0.6) 0%, rgba(60,38,18,0.7) 100%);
+            border-radius: 10px;
+            border: 1px solid rgba(120,85,45,0.25);
+            box-shadow: inset 0 1px 0 rgba(255,220,160,0.08), inset 0 -1px 2px rgba(0,0,0,0.3), 0 3px 10px rgba(0,0,0,0.4);
+        }
+
+        #header h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #E8D4B0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6), 0 0 8px rgba(212,160,64,0.15);
+            letter-spacing: 1px;
+        }
+
+        .icon-btn, .back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            color: #D4A040;
+            background: rgba(40,25,12,0.4);
+            border: 1px solid rgba(120,85,45,0.3);
+            border-radius: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 1.4rem;
+            transition: transform 0.15s ease, background 0.15s ease;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+            line-height: 1;
+        }
+        .icon-btn:active, .back-btn:active { transform: scale(0.93); }
+        .back-btn svg { width: 24px; height: 24px; }
+
+        #score-area { display: flex; gap: 0.4rem; align-items: center; }
+
+        .score-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(40,25,12,0.5) 0%, rgba(30,18,8,0.6) 100%);
+            border-radius: 8px;
+            padding: 0.3rem 0.6rem;
+            min-width: 78px;
+            border: 1px solid rgba(120,85,45,0.2);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .score-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(180,150,100,0.6);
+            font-weight: 700;
+        }
+        .score-box span:last-child {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #D4A040;
+            text-shadow: 0 0 6px rgba(212,160,64,0.2);
+        }
+
+        /* ===== Schwierigkeitswahl ===== */
+        #difficulty {
+            display: flex;
+            gap: 0.8rem;
+            margin: 0.8rem 0 0.4rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .diff-btn {
+            background: linear-gradient(180deg, #8B6B40 0%, #7A5A30 40%, #654A25 100%);
+            color: rgba(30,18,8,0.92);
+            text-shadow: 0 1px 0 rgba(255,220,160,0.25);
+            border: 1px solid rgba(120,85,45,0.4);
+            border-radius: 12px;
+            padding: 0.7rem 1.2rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', Georgia, serif;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            min-height: 56px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,220,160,0.2), inset 0 -2px 0 rgba(0,0,0,0.2);
+            transition: transform 0.12s ease, filter 0.15s ease;
+        }
+        .diff-btn:active { transform: scale(0.96); }
+        .diff-btn.active {
+            filter: brightness(1.15);
+            outline: 3px solid #5DAA5D;
+            outline-offset: 2px;
+        }
+
+        /* ===== Fortschrittsbalken ===== */
+        #progress-wrap {
+            width: 100%;
+            max-width: 560px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.2rem 0.2rem 0;
+            flex-shrink: 0;
+        }
+        #progress-track {
+            flex: 1 1 auto;
+            height: 16px;
+            background: rgba(30,18,8,0.55);
+            border-radius: 10px;
+            border: 1px solid rgba(120,85,45,0.3);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #5DAA5D 0%, #8BD46B 100%);
+            box-shadow: 0 0 8px rgba(93,170,93,0.4);
+            transition: width 0.35s ease;
+        }
+        #progress-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #D4A040;
+            min-width: 56px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .record-line {
+            text-align: center;
+            font-size: 1rem;
+            color: #D4A040;
+            font-weight: 700;
+            padding: 0.35rem 0.5rem 0.1rem;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        /* ===== Spielbrett ===== */
+        #board-wrap {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 0;
+            padding: 0.4rem 0;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            margin: 0 auto;
+            line-height: 1;
+        }
+
+        /* ===== Frucht-Kachel ===== */
+        .cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            cursor: pointer;
+            border: 2px solid rgba(0,0,0,0.18);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.18), 0 2px 5px rgba(0,0,0,0.3);
+            transition: transform 0.12s ease, opacity 0.16s ease;
+            will-change: transform, opacity;
+            min-width: 0;
+        }
+        .cell:active { transform: scale(0.94); }
+
+        /* Frucht-Farbtöne (Form + Farbe doppelt kodiert) */
+        .f0 { background: linear-gradient(160deg, #ff8a7a 0%, #e23b2e 100%); }   /* Apfel rot */
+        .f1 { background: linear-gradient(160deg, #ffe27a 0%, #f2b500 100%); }   /* Banane gelb */
+        .f2 { background: linear-gradient(160deg, #c79bff 0%, #7a3ec2 100%); }   /* Trauben lila */
+        .f3 { background: linear-gradient(160deg, #9be08a 0%, #3f9e2e 100%); }   /* Apfel grün */
+        .f4 { background: linear-gradient(160deg, #ffc06a 0%, #f07a16 100%); }   /* Orange */
+        .f5 { background: linear-gradient(160deg, #7ec4ff 0%, #2e7ad4 100%); }   /* Blaubeere blau */
+
+        .cell.selected {
+            transform: scale(1.07);
+            outline: 4px solid #F8E6C0;
+            outline-offset: -1px;
+            box-shadow: 0 0 16px rgba(248,230,192,0.7), inset 0 2px 4px rgba(255,255,255,0.35);
+            z-index: 3;
+        }
+        .cell.clearing {
+            transform: scale(0.25);
+            opacity: 0;
+        }
+        .cell.shake { animation: shake 0.22s ease; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            30% { transform: translateX(-6px); }
+            70% { transform: translateX(6px); }
+        }
+
+        /* ===== Sieg-Overlay ===== */
+        #win {
+            position: fixed;
+            inset: 0;
+            background: rgba(5,8,5,0.92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.3s ease;
+        }
+        #win.hidden { display: none; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #win-box {
+            background: linear-gradient(160deg, #6B4A2C 0%, #5A3C20 40%, #4A3018 100%);
+            border: 1px solid rgba(120,85,45,0.35);
+            border-radius: 16px;
+            padding: 2.2rem 2.6rem;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 16px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,220,160,0.1);
+            animation: popIn 0.35s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #win-box .trophy { font-size: 3.5rem; margin-bottom: 0.5rem; }
+        #win-box h2 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 0.8rem;
+            color: #F8E6C0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        #win-box p { font-size: 1.25rem; margin-bottom: 0.5rem; color: #F5E6D0; }
+        #win-box .stat { color: #D4A040; font-weight: 700; }
+        #win-box .record { color: #5DAA5D; font-weight: 700; font-size: 1.1rem; margin-top: 0.4rem; }
+
+        .big-btn {
+            background: linear-gradient(180deg, #8B6B40 0%, #7A5A30 40%, #654A25 100%);
+            color: rgba(30,18,8,0.92);
+            text-shadow: 0 1px 0 rgba(255,220,160,0.2);
+            border: 1px solid rgba(120,85,45,0.4);
+            border-radius: 12px;
+            padding: 0.9rem 2.2rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', Georgia, serif;
+            cursor: pointer;
+            letter-spacing: 1px;
+            margin-top: 1.2rem;
+            min-height: 60px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,220,160,0.2), inset 0 -2px 0 rgba(0,0,0,0.2);
+            transition: transform 0.12s ease;
+        }
+        .big-btn:active { transform: scale(0.96); }
+
+        @media (max-width: 380px) {
+            #header h1 { font-size: 1.2rem; }
+            .icon-btn, .back-btn { width: 44px; height: 44px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <a href="index.html" class="back-btn" aria-label="Zurück zum Menü">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </a>
+            <h1>Früchte</h1>
+            <div id="score-area">
+                <button class="icon-btn" id="new-btn" aria-label="Neues Spiel">🔄</button>
+                <button class="icon-btn" id="mute-btn" aria-label="Ton an/aus">🔊</button>
+            </div>
+        </div>
+
+        <div id="difficulty">
+            <button class="diff-btn" data-types="4">Leicht</button>
+            <button class="diff-btn" data-types="5">Mittel</button>
+            <button class="diff-btn" data-types="6">Schwer</button>
+        </div>
+
+        <div id="progress-wrap">
+            <div id="progress-track"><div id="progress-fill"></div></div>
+            <div id="progress-label">0/25</div>
+        </div>
+        <div id="record-line" class="record-line"></div>
+
+        <div id="board-wrap">
+            <div id="board"></div>
+        </div>
+    </div>
+
+    <div id="win" class="hidden">
+        <div id="win-box">
+            <div class="trophy">🏆</div>
+            <h2>Geschafft!</h2>
+            <p>Du hast <span class="stat" id="win-goal"></span> gesammelt!</p>
+            <p class="stat" id="win-time"></p>
+            <p class="record hidden" id="win-record">Neue Bestzeit! ⭐</p>
+            <button class="big-btn" id="again-btn">Nochmal spielen</button>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        // ===== Brett-Maße =====
+        const ROWS = 8;
+        const COLS = 6;
+        const GAP = 6;
+        const N = ROWS * COLS;
+
+        // ===== Früchte (Reihenfolge = maximale Farbunterscheidung pro Stufe) =====
+        // 0 rot, 1 gelb, 2 lila, 3 grün, 4 orange, 5 blau
+        const FRUITS = ['🍎', '🍌', '🍇', '🍏', '🍊', '🫐'];
+
+        // ===== Schwierigkeit =====
+        const GOALS = { 4: 25, 5: 30, 6: 35 };
+        let types = 4;          // Anzahl Fruchtsorten
+        let goal = 25;          // zu sammelnde Früchte
+
+        // ===== Zustand =====
+        let grid = new Array(N).fill(0);   // Fruchtindex je Feld
+        let cells = [];                    // DOM-Elemente
+        let selected = null;               // ausgewähltes Feld
+        let locked = false;                // sperrt Eingabe während Auflösung
+        let collected = 0;                 // gesammelte Früchte
+        let startTime = 0;
+
+        const boardEl = document.getElementById('board');
+        const boardWrap = document.getElementById('board-wrap');
+        const winEl = document.getElementById('win');
+        const fillEl = document.getElementById('progress-fill');
+        const progLabel = document.getElementById('progress-label');
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        const idx = (r, c) => r * COLS + c;
+
+        // ===== Ton (WebAudio, selbst erzeugt) =====
+        let audioCtx = null;
+        let muted = localStorage.getItem('fruchtMuted') === '1';
+        updateMuteBtn();
+
+        function ensureAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+                catch (e) { audioCtx = null; }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function tone(freq, dur, type, vol) {
+            if (muted) return;
+            ensureAudio();
+            if (!audioCtx) return;
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type || 'sine';
+            o.frequency.value = freq;
+            g.gain.value = 0;
+            o.connect(g); g.connect(audioCtx.destination);
+            const t = audioCtx.currentTime;
+            g.gain.linearRampToValueAtTime(vol || 0.18, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.18));
+            o.start(t);
+            o.stop(t + (dur || 0.18) + 0.02);
+        }
+
+        const sndSwap  = () => tone(440, 0.09, 'sine', 0.12);
+        const sndNope  = () => tone(200, 0.18, 'triangle', 0.13);
+        const sndMatch = () => { tone(620, 0.10, 'sine', 0.17); setTimeout(() => tone(880, 0.14, 'sine', 0.15), 90); };
+        function sndWin() {
+            [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.25, 'sine', 0.2), i * 160));
+        }
+
+        function updateMuteBtn() {
+            const b = document.getElementById('mute-btn');
+            b.textContent = muted ? '🔇' : '🔊';
+            b.style.color = muted ? '#c0654a' : '#D4A040';
+        }
+
+        document.getElementById('mute-btn').addEventListener('click', function () {
+            muted = !muted;
+            localStorage.setItem('fruchtMuted', muted ? '1' : '0');
+            updateMuteBtn();
+            if (!muted) sndSwap();
+        });
+
+        // ===== Hilfsfunktionen =====
+        function randType() { return Math.floor(Math.random() * types); }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // alle Felder finden, die Teil einer 3er-Reihe (waagrecht/senkrecht) sind
+        function findMatches() {
+            const m = new Set();
+            // waagrecht
+            for (let r = 0; r < ROWS; r++) {
+                let run = 1;
+                for (let c = 1; c < COLS; c++) {
+                    if (grid[idx(r, c)] === grid[idx(r, c - 1)]) {
+                        run++;
+                    } else {
+                        if (run >= 3) for (let k = 0; k < run; k++) m.add(idx(r, c - 1 - k));
+                        run = 1;
+                    }
+                }
+                if (run >= 3) for (let k = 0; k < run; k++) m.add(idx(r, COLS - 1 - k));
+            }
+            // senkrecht
+            for (let c = 0; c < COLS; c++) {
+                let run = 1;
+                for (let r = 1; r < ROWS; r++) {
+                    if (grid[idx(r, c)] === grid[idx(r - 1, c)]) {
+                        run++;
+                    } else {
+                        if (run >= 3) for (let k = 0; k < run; k++) m.add(idx(r - 1 - k, c));
+                        run = 1;
+                    }
+                }
+                if (run >= 3) for (let k = 0; k < run; k++) m.add(idx(ROWS - 1 - k, c));
+            }
+            return m;
+        }
+
+        // gibt es überhaupt einen Zug, der einen Treffer erzeugt?
+        function hasAnyMove() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const i = idx(r, c);
+                    // nach rechts
+                    if (c < COLS - 1) {
+                        const j = idx(r, c + 1);
+                        swapVals(i, j);
+                        const ok = findMatches().size > 0;
+                        swapVals(i, j);
+                        if (ok) return true;
+                    }
+                    // nach unten
+                    if (r < ROWS - 1) {
+                        const j = idx(r + 1, c);
+                        swapVals(i, j);
+                        const ok = findMatches().size > 0;
+                        swapVals(i, j);
+                        if (ok) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function swapVals(a, b) {
+            const t = grid[a]; grid[a] = grid[b]; grid[b] = t;
+        }
+
+        // Brett ohne Start-Treffer erzeugen, das mindestens einen Zug erlaubt
+        function generate() {
+            do {
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        let v;
+                        let guard = 0;
+                        do {
+                            v = randType();
+                            guard++;
+                        } while (guard < 20 && (
+                            (c >= 2 && grid[idx(r, c - 1)] === v && grid[idx(r, c - 2)] === v) ||
+                            (r >= 2 && grid[idx(r - 1, c)] === v && grid[idx(r - 2, c)] === v)
+                        ));
+                        grid[idx(r, c)] = v;
+                    }
+                }
+            } while (!hasAnyMove());
+        }
+
+        // Spalten nach unten fallen lassen, oben neu auffüllen (null = leer)
+        function collapse() {
+            for (let c = 0; c < COLS; c++) {
+                let write = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    const v = grid[idx(r, c)];
+                    if (v !== null) {
+                        grid[idx(write, c)] = v;
+                        write--;
+                    }
+                }
+                for (let r = write; r >= 0; r--) {
+                    grid[idx(r, c)] = randType();
+                }
+            }
+        }
+
+        // ===== Darstellung =====
+        function buildBoard() {
+            boardEl.innerHTML = '';
+            cells = [];
+            for (let i = 0; i < N; i++) {
+                const el = document.createElement('div');
+                el.className = 'cell';
+                el.dataset.i = i;
+                el.addEventListener('click', () => onCellTap(i));
+                boardEl.appendChild(el);
+                cells.push(el);
+            }
+        }
+
+        function paint() {
+            for (let i = 0; i < N; i++) {
+                const el = cells[i];
+                el.className = 'cell f' + grid[i];
+                el.textContent = FRUITS[grid[i]];
+            }
+            selected = null;
+        }
+
+        function paintCells(list) {
+            list.forEach(i => {
+                const el = cells[i];
+                el.className = 'cell f' + grid[i];
+                el.textContent = FRUITS[grid[i]];
+            });
+        }
+
+        function fitBoard() {
+            const h = boardWrap.clientHeight;
+            const w = boardWrap.clientWidth;
+            if (h <= 0 || w <= 0) return;
+            const cellByH = (h - (ROWS - 1) * GAP) / ROWS;
+            const cellByW = (w - (COLS - 1) * GAP) / COLS;
+            const cell = Math.min(cellByW, cellByH, 96);
+            const bw = Math.floor(cell * COLS + (COLS - 1) * GAP);
+            boardEl.style.width = bw + 'px';
+            boardEl.style.fontSize = Math.floor(cell * 0.56) + 'px';
+        }
+
+        function clearSelection() {
+            if (selected !== null && cells[selected]) cells[selected].classList.remove('selected');
+            selected = null;
+        }
+
+        function paintProgress() {
+            const shown = Math.min(collected, goal);
+            progLabel.textContent = shown + '/' + goal;
+            fillEl.style.width = Math.min(100, (collected / goal) * 100) + '%';
+        }
+
+        // ===== Eingabe =====
+        function adjacent(a, b) {
+            const ra = Math.floor(a / COLS), ca = a % COLS;
+            const rb = Math.floor(b / COLS), cb = b % COLS;
+            return (ra === rb && Math.abs(ca - cb) === 1) || (ca === cb && Math.abs(ra - rb) === 1);
+        }
+
+        function onCellTap(i) {
+            if (locked) return;
+            ensureAudio();
+            if (selected === null) {
+                selected = i;
+                cells[i].classList.add('selected');
+                return;
+            }
+            if (selected === i) { clearSelection(); return; }
+            if (adjacent(selected, i)) {
+                const a = selected;
+                clearSelection();
+                attemptSwap(a, i);
+            } else {
+                // nicht benachbart -> Auswahl einfach umsetzen (verzeihend)
+                clearSelection();
+                selected = i;
+                cells[i].classList.add('selected');
+            }
+        }
+
+        async function attemptSwap(a, b) {
+            locked = true;
+            swapVals(a, b);
+            paintCells([a, b]);
+            sndSwap();
+            await sleep(140);
+            if (findMatches().size > 0) {
+                await resolveBoard();
+            } else {
+                // kein Treffer -> zurücktauschen
+                sndNope();
+                cells[a].classList.add('shake');
+                cells[b].classList.add('shake');
+                await sleep(220);
+                swapVals(a, b);
+                paint();
+            }
+            locked = false;
+        }
+
+        async function resolveBoard() {
+            while (true) {
+                const m = findMatches();
+                if (m.size === 0) break;
+                collected += m.size;
+                paintProgress();
+                sndMatch();
+                m.forEach(i => cells[i].classList.add('clearing'));
+                await sleep(200);
+                m.forEach(i => { grid[i] = null; });
+                collapse();
+                paint();
+                await sleep(150);
+                if (collected >= goal) { onWin(); return; }
+            }
+            // Sackgasse vermeiden: notfalls neu mischen
+            if (!hasAnyMove()) {
+                await reshuffle();
+            }
+        }
+
+        async function reshuffle() {
+            // vorhandene Früchte neu verteilen, bis ein Zug möglich und kein Sofort-Treffer da ist
+            let guard = 0;
+            do {
+                const vals = grid.slice();
+                shuffle(vals);
+                for (let i = 0; i < N; i++) grid[i] = vals[i];
+                guard++;
+            } while (guard < 60 && (findMatches().size > 0 || !hasAnyMove()));
+            paint();
+            await sleep(150);
+        }
+
+        // ===== Sieg =====
+        function elapsedSeconds() { return Math.round((Date.now() - startTime) / 1000); }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return m > 0 ? (m + ' Min ' + s + ' Sek') : (s + ' Sekunden');
+        }
+
+        function diffName(t) { return t === 4 ? 'Leicht' : t === 5 ? 'Mittel' : 'Schwer'; }
+
+        function updateRecordLine() {
+            const best = Number(localStorage.getItem('fruchtBest_' + types) || 0);
+            document.getElementById('record-line').textContent =
+                '🏆 Bestzeit ' + diffName(types) + ': ' + (best > 0 ? formatTime(best) : 'noch keine');
+        }
+
+        function onWin() {
+            const secs = elapsedSeconds();
+            sndWin();
+            document.getElementById('win-goal').textContent = goal + ' Früchte';
+            document.getElementById('win-time').textContent = 'Zeit: ' + formatTime(secs);
+
+            const key = 'fruchtBest_' + types;
+            const prev = Number(localStorage.getItem(key) || 0);
+            const recEl = document.getElementById('win-record');
+            if (prev === 0 || secs < prev) {
+                localStorage.setItem(key, String(secs));
+                recEl.classList.remove('hidden');
+            } else {
+                recEl.classList.add('hidden');
+            }
+            updateRecordLine();
+            setTimeout(() => winEl.classList.remove('hidden'), 500);
+        }
+
+        // ===== Spielstart =====
+        function newGame(t) {
+            types = t;
+            goal = GOALS[t] || 25;
+            collected = 0;
+            selected = null;
+            locked = false;
+            winEl.classList.add('hidden');
+
+            document.querySelectorAll('.diff-btn').forEach(b => {
+                b.classList.toggle('active', Number(b.dataset.types) === t);
+            });
+            updateRecordLine();
+            paintProgress();
+
+            generate();
+            paint();
+            fitBoard();
+            startTime = Date.now();
+        }
+
+        document.getElementById('again-btn').addEventListener('click', () => newGame(types));
+        document.getElementById('new-btn').addEventListener('click', () => newGame(types));
+        document.querySelectorAll('.diff-btn').forEach(b => {
+            b.addEventListener('click', () => newGame(Number(b.dataset.types)));
+        });
+
+        window.addEventListener('resize', fitBoard);
+        window.addEventListener('orientationchange', () => setTimeout(fitBoard, 200));
+
+        // ===== Service Worker =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').then(reg => reg.update()).catch(() => {});
+        }
+
+        // Start
+        buildBoard();
+        newGame(4);
+    })();
+    </script>
+</body>
+</html>

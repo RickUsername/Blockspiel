@@ -167,3 +167,45 @@ Klassische Patience — bewusst **so einfach wie möglich** gemacht.
 
 ## Hinweis
 Klondike-Mischungen sind nicht immer zu 100 % lösbar; durch unbegrenztes Zurücklegen des Stapels, Zurück und Hinweis bleibt es aber stets handhabbar. „Neu" mischt jederzeit neu. Bestzeit in localStorage.
+
+---
+
+# Früchte (Match-3 "Zen") -- fruechte.html
+
+## Konzept
+Entspanntes Drei-gewinnt im Stil von Candy Crush, aber bewusst ohne jeden Druck:
+**kein Zeitlimit, keine begrenzten Züge, kein Verlieren.** Für sehr alte Nutzer.
+
+## Spielfeld
+- **6 Spalten x 8 Zeilen** (48 Kacheln). 6 breit = große, gut treffbare Felder
+  (das Tablet wird hochkant gehalten -> Breite ist das Nadelöhr).
+- Fit-Funktion skaliert das Brett so, dass alle 8 Zeilen + Header auf den Schirm passen.
+
+## Früchte / Farben (Form UND Farbe doppelt kodiert -> seniorenfreundlich)
+0 🍎 rot, 1 🍌 gelb, 2 🍇 lila, 3 🍏 grün, 4 🍊 orange, 5 🫐 blau.
+Reihenfolge so gewählt, dass jede Schwierigkeit maximal unterscheidbare Farben nutzt.
+
+## Schwierigkeit (= Anzahl Fruchtsorten + Ziel)
+- Leicht: 4 Sorten, Ziel 25 Früchte
+- Mittel: 5 Sorten, Ziel 30 Früchte
+- Schwer: 6 Sorten, Ziel 35 Früchte
+
+## Steuerung (nur Tippen, kein Drag)
+- Erstes Feld antippen -> hervorgehoben.
+- Benachbartes Feld antippen -> Tausch.
+- Tausch ohne Treffer wird sanft rückgängig gemacht (kleines Wackeln).
+- Nicht benachbart angetippt -> Auswahl springt einfach dorthin (verzeihend).
+
+## Spiellogik
+- 3+ gleiche waagrecht/senkrecht verschwinden, Früchte rutschen nach, oben kommen neue.
+- Kettenreaktionen werden automatisch aufgelöst (Bonus-Früchte).
+- Brettgenerierung ohne Start-Treffer und garantiert mit mindestens einem Zug.
+- **Anti-Sackgasse:** Gibt es keinen Zug mehr, mischt das Brett automatisch neu
+  (validiert: 12.000 Simulationen, 0 Hänger, Ziel immer erreichbar).
+- Fortschrittsbalken zeigt gesammelte / Ziel-Früchte.
+- Bei Ziel erreicht: "Geschafft!" + Bestzeit je Schwierigkeit (localStorage `fruchtBest_<sorten>`).
+
+## Technik
+- Reines HTML/CSS/JS, im PWA-Cache (service-worker `gamehub-v3`).
+- Leichte Animationen (nur transform/opacity), kein blur -> läuft auf schwacher Hardware.
+- WebAudio-Sounds (Tausch/Treffer/Sieg), Stummschalter (`fruchtMuted`).

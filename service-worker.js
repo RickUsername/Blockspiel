@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gamehub-v2';
+const CACHE_NAME = 'gamehub-v3';
 const ASSETS = [
     './',
     './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
     './memory.html',
     './mahjong.html',
     './solitaer.html',
+    './fruechte.html',
     './css/style.css',
     './css/minigolf.css',
     './js/game.js',
