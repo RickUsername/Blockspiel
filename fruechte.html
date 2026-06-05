@@ -122,37 +122,6 @@
             text-shadow: 0 0 6px rgba(212,160,64,0.2);
         }
 
-        /* ===== Schwierigkeitswahl ===== */
-        #difficulty {
-            display: flex;
-            gap: 0.8rem;
-            margin: 0.8rem 0 0.4rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .diff-btn {
-            background: linear-gradient(180deg, #8B6B40 0%, #7A5A30 40%, #654A25 100%);
-            color: rgba(30,18,8,0.92);
-            text-shadow: 0 1px 0 rgba(255,220,160,0.25);
-            border: 1px solid rgba(120,85,45,0.4);
-            border-radius: 12px;
-            padding: 0.7rem 1.2rem;
-            font-size: 1.05rem;
-            font-weight: 700;
-            font-family: 'Playfair Display', Georgia, serif;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-            min-height: 56px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,220,160,0.2), inset 0 -2px 0 rgba(0,0,0,0.2);
-            transition: transform 0.12s ease, filter 0.15s ease;
-        }
-        .diff-btn:active { transform: scale(0.96); }
-        .diff-btn.active {
-            filter: brightness(1.15);
-            outline: 3px solid #5DAA5D;
-            outline-offset: 2px;
-        }
-
         /* ===== Fortschrittsbalken ===== */
         #progress-wrap {
             width: 100%;
@@ -160,7 +129,7 @@
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            padding: 0.2rem 0.2rem 0;
+            padding: 0.9rem 0.2rem 0;
             flex-shrink: 0;
         }
         #progress-track {
@@ -337,15 +306,9 @@
             </div>
         </div>
 
-        <div id="difficulty">
-            <button class="diff-btn" data-types="4">Leicht</button>
-            <button class="diff-btn" data-types="5">Mittel</button>
-            <button class="diff-btn" data-types="6">Schwer</button>
-        </div>
-
         <div id="progress-wrap">
             <div id="progress-track"><div id="progress-fill"></div></div>
-            <div id="progress-label">0/25</div>
+            <div id="progress-label">0/200</div>
         </div>
         <div id="record-line" class="record-line"></div>
 
@@ -358,7 +321,7 @@
         <div id="win-box">
             <div class="trophy">🏆</div>
             <h2>Geschafft!</h2>
-            <p>Du hast <span class="stat" id="win-goal"></span> gesammelt!</p>
+            <p>Du hast <span class="stat" id="win-goal"></span> erreicht!</p>
             <p class="stat" id="win-time"></p>
             <p class="record hidden" id="win-record">Neue Bestzeit! ⭐</p>
             <button class="big-btn" id="again-btn">Nochmal spielen</button>
@@ -379,17 +342,16 @@
         // 0 rot, 1 gelb, 2 lila, 3 grün, 4 orange, 5 blau
         const FRUITS = ['🍎', '🍌', '🍇', '🍏', '🍊', '🫐'];
 
-        // ===== Schwierigkeit =====
-        const GOALS = { 4: 25, 5: 30, 6: 35 };
-        let types = 4;          // Anzahl Fruchtsorten
-        let goal = 25;          // zu sammelnde Früchte
+        // ===== Ziel =====
+        const types = 5;        // feste Anzahl Fruchtsorten
+        const goal = 200;       // zu erreichende Punktzahl
 
         // ===== Zustand =====
         let grid = new Array(N).fill(0);   // Fruchtindex je Feld
         let cells = [];                    // DOM-Elemente
         let selected = null;               // ausgewähltes Feld
         let locked = false;                // sperrt Eingabe während Auflösung
-        let collected = 0;                 // gesammelte Früchte
+        let score = 0;                     // Punkte
         let startTime = 0;
 
         const boardEl = document.getElementById('board');
@@ -492,6 +454,32 @@
                 if (run >= 3) for (let k = 0; k < run; k++) m.add(idx(ROWS - 1 - k, c));
             }
             return m;
+        }
+
+        // Punkte für die aktuellen Treffer: 1 pro Frucht, Extra-Bonus ab 4 gleichen
+        function runScore(L) { return L + (L > 3 ? (L - 3) * 5 : 0); }
+        // -> 3er = 3, 4er = 9, 5er = 15, 6er = 21 Punkte
+        function scoreRuns() {
+            let pts = 0;
+            // waagrecht
+            for (let r = 0; r < ROWS; r++) {
+                let run = 1;
+                for (let c = 1; c < COLS; c++) {
+                    if (grid[idx(r, c)] === grid[idx(r, c - 1)]) run++;
+                    else { if (run >= 3) pts += runScore(run); run = 1; }
+                }
+                if (run >= 3) pts += runScore(run);
+            }
+            // senkrecht
+            for (let c = 0; c < COLS; c++) {
+                let run = 1;
+                for (let r = 1; r < ROWS; r++) {
+                    if (grid[idx(r, c)] === grid[idx(r - 1, c)]) run++;
+                    else { if (run >= 3) pts += runScore(run); run = 1; }
+                }
+                if (run >= 3) pts += runScore(run);
+            }
+            return pts;
         }
 
         // gibt es überhaupt einen Zug, der einen Treffer erzeugt?
@@ -610,9 +598,9 @@
         }
 
         function paintProgress() {
-            const shown = Math.min(collected, goal);
+            const shown = Math.min(score, goal);
             progLabel.textContent = shown + '/' + goal;
-            fillEl.style.width = Math.min(100, (collected / goal) * 100) + '%';
+            fillEl.style.width = Math.min(100, (score / goal) * 100) + '%';
         }
 
         // ===== Eingabe =====
@@ -667,7 +655,7 @@
             while (true) {
                 const m = findMatches();
                 if (m.size === 0) break;
-                collected += m.size;
+                score += scoreRuns();
                 paintProgress();
                 sndMatch();
                 m.forEach(i => cells[i].classList.add('clearing'));
@@ -676,7 +664,7 @@
                 collapse();
                 paint();
                 await sleep(150);
-                if (collected >= goal) { onWin(); return; }
+                if (score >= goal) { onWin(); return; }
             }
             // Sackgasse vermeiden: notfalls neu mischen
             if (!hasAnyMove()) {
@@ -706,21 +694,19 @@
             return m > 0 ? (m + ' Min ' + s + ' Sek') : (s + ' Sekunden');
         }
 
-        function diffName(t) { return t === 4 ? 'Leicht' : t === 5 ? 'Mittel' : 'Schwer'; }
-
         function updateRecordLine() {
-            const best = Number(localStorage.getItem('fruchtBest_' + types) || 0);
+            const best = Number(localStorage.getItem('fruchtBest') || 0);
             document.getElementById('record-line').textContent =
-                '🏆 Bestzeit ' + diffName(types) + ': ' + (best > 0 ? formatTime(best) : 'noch keine');
+                '🏆 Bestzeit: ' + (best > 0 ? formatTime(best) : 'noch keine');
         }
 
         function onWin() {
             const secs = elapsedSeconds();
             sndWin();
-            document.getElementById('win-goal').textContent = goal + ' Früchte';
+            document.getElementById('win-goal').textContent = score + ' Punkte';
             document.getElementById('win-time').textContent = 'Zeit: ' + formatTime(secs);
 
-            const key = 'fruchtBest_' + types;
+            const key = 'fruchtBest';
             const prev = Number(localStorage.getItem(key) || 0);
             const recEl = document.getElementById('win-record');
             if (prev === 0 || secs < prev) {
@@ -734,17 +720,12 @@
         }
 
         // ===== Spielstart =====
-        function newGame(t) {
-            types = t;
-            goal = GOALS[t] || 25;
-            collected = 0;
+        function newGame() {
+            score = 0;
             selected = null;
             locked = false;
             winEl.classList.add('hidden');
 
-            document.querySelectorAll('.diff-btn').forEach(b => {
-                b.classList.toggle('active', Number(b.dataset.types) === t);
-            });
             updateRecordLine();
             paintProgress();
 
@@ -754,11 +735,8 @@
             startTime = Date.now();
         }
 
-        document.getElementById('again-btn').addEventListener('click', () => newGame(types));
-        document.getElementById('new-btn').addEventListener('click', () => newGame(types));
-        document.querySelectorAll('.diff-btn').forEach(b => {
-            b.addEventListener('click', () => newGame(Number(b.dataset.types)));
-        });
+        document.getElementById('again-btn').addEventListener('click', () => newGame());
+        document.getElementById('new-btn').addEventListener('click', () => newGame());
 
         window.addEventListener('resize', fitBoard);
         window.addEventListener('orientationchange', () => setTimeout(fitBoard, 200));
@@ -770,7 +748,7 @@
 
         // Start
         buildBoard();
-        newGame(4);
+        newGame();
     })();
     </script>
 </body>

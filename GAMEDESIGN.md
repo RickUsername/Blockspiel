@@ -185,10 +185,12 @@ Entspanntes Drei-gewinnt im Stil von Candy Crush, aber bewusst ohne jeden Druck:
 0 🍎 rot, 1 🍌 gelb, 2 🍇 lila, 3 🍏 grün, 4 🍊 orange, 5 🫐 blau.
 Reihenfolge so gewählt, dass jede Schwierigkeit maximal unterscheidbare Farben nutzt.
 
-## Schwierigkeit (= Anzahl Fruchtsorten + Ziel)
-- Leicht: 4 Sorten, Ziel 25 Früchte
-- Mittel: 5 Sorten, Ziel 30 Früchte
-- Schwer: 6 Sorten, Ziel 35 Früchte
+## Ziel & Punkte (keine Schwierigkeitsstufen)
+- Feste **5 Fruchtsorten**, ein einziges Ziel: **200 Punkte**.
+- Punkte: 1 pro Frucht, **Extra-Bonus ab 4 gleichen**:
+  3er = 3, 4er = 9, 5er = 15, 6er = 21 Punkte (`runScore(L) = L + (L>3 ? (L-3)*5 : 0)`).
+- Stufen entfernt (brachten kaum spürbaren Unterschied).
+- Validiert: 6000 Simulationen, Ziel immer erreichbar, Median ~41 Züge, 94 % mit 4+-Bonus.
 
 ## Steuerung (nur Tippen, kein Drag)
 - Erstes Feld antippen -> hervorgehoben.
@@ -202,8 +204,8 @@ Reihenfolge so gewählt, dass jede Schwierigkeit maximal unterscheidbare Farben 
 - Brettgenerierung ohne Start-Treffer und garantiert mit mindestens einem Zug.
 - **Anti-Sackgasse:** Gibt es keinen Zug mehr, mischt das Brett automatisch neu
   (validiert: 12.000 Simulationen, 0 Hänger, Ziel immer erreichbar).
-- Fortschrittsbalken zeigt gesammelte / Ziel-Früchte.
-- Bei Ziel erreicht: "Geschafft!" + Bestzeit je Schwierigkeit (localStorage `fruchtBest_<sorten>`).
+- Fortschrittsbalken zeigt Punkte / 200.
+- Bei Ziel erreicht: "Geschafft!" + Bestzeit (localStorage `fruchtBest`).
 
 ## Technik
 - Reines HTML/CSS/JS, im PWA-Cache (service-worker `gamehub-v3`).
